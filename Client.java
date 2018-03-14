@@ -49,14 +49,5 @@ public class Client extends Thread {
    
     public static void main(String args[]) {
         new Client(10, 5).start();
-        // new Client(20, 5).start();
-        // new Client(30, 5).start();
-        // new Client(40, 5).start();
-        // new Client(50, 5).start();
-        // new Client(60, 5).start();
-        // new Client(70, 5).start();
-        // new Client(80, 5).start();
-        // new Client(90, 5).start();
-        // new Client(100, 5).start();
     }
 }
