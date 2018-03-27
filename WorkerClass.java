@@ -1,3 +1,5 @@
+package Project;
+
 import org.apache.commons.math3.analysis.function.Inverse;
 import org.apache.commons.math3.linear.*;
 
@@ -27,15 +29,16 @@ public class WorkerClass extends Thread implements Worker  {
         for(int i=0; i < 200; i++){
             for(int j=0; j < 20; j++){
                 X.setEntry(i,j,sparse_m.getEntry(i,j));
+
             }
         }
-
-
         for(int j=0; j < 200; j++){
             for(int i=0; i < 20; i++){
                 Y.setEntry(j,i,sparse_m.getEntry(j,i));
             }
         }
+
+
 
     }
 
@@ -125,15 +128,17 @@ public class WorkerClass extends Thread implements Worker  {
         RealMatrix Ytranspose = Y.transpose();
         RealMatrix product1 = Ytranspose.multiply(realMatrixCu);
         RealMatrix product2 = product1.multiply(Y);
-        RealMatrix IdentityMatrix = MatrixUtils.createRealIdentityMatrix(realMatrixCu.getColumnDimension());//ftiaxnei monadiaio pinaka
+        RealMatrix IdentityMatrix = MatrixUtils.createRealIdentityMatrix(realMatrixYY.getColumnDimension());//ftiaxnei monadiaio pinaka
         RealMatrix regularization = IdentityMatrix.scalarMultiply(l);
         RealMatrix inverseTerm = product2.add(regularization);
         RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
+        //System.out.println(Inverse.getRowDimension() + " " + Inverse.getColumnDimension());
         RealMatrix multiplication2 = Ytranspose.multiply(realMatrixCu);
         double[] pu_data = sparse_m.getRow(user);
-        RealMatrix pu = MatrixUtils.createColumnRealMatrix(pu_data);//ftiaxnei to p(i)
-        RealMatrix multplication3 = multiplication2.multiply(pu);
-        RealMatrix x_u = Inverse.multiply(multplication3);
+        RealMatrix pu = MatrixUtils.createColumnRealMatrix(pu_data);//ftiaxnei to p(u)
+        //System.out.println(pu.getRowDimension() + " " + pu.getColumnDimension());
+        RealMatrix multiplication3 = multiplication2.multiply(pu);
+        RealMatrix x_u = Inverse.multiply(multiplication3);
 
         return x_u;
     }
@@ -142,19 +147,19 @@ public class WorkerClass extends Thread implements Worker  {
     public RealMatrix calculate_y_i(int item, RealMatrix realMatrixXX, RealMatrix realMatrixCi){
         double l = 0.01;
         RealMatrix Xtranspose = X.transpose();
-        RealMatrix IdentityMatrix = MatrixUtils.createRealIdentityMatrix(realMatrixCi.getColumnDimension());//ftiaxnei monadiaio pinaka
-        RealMatrix subtract = realMatrixCi.subtract(IdentityMatrix);//afairesh C(i) - I
-        RealMatrix regularization = IdentityMatrix.scalarMultiply(l);//stoixeio pros stoixeio me to l->( l * I)
-        RealMatrix product1 = Xtranspose.multiply(subtract);//X^T * (C(i) - I)
-        RealMatrix product2 = product1.multiply(X);//(X^T * (C(i) - I)) * X
-        RealMatrix InverseTerm1 = realMatrixXX.add(product2);//X^T*X + (X^T * (C(i) - I)) * X
-        RealMatrix InverseTerm = InverseTerm1.add(regularization);//X^T*X + (X^T * (C(i) - I)) * X +l*I
-        RealMatrix Inverse = new QRDecomposition(InverseTerm).getSolver().getInverse();
+        RealMatrix product1 = Xtranspose.multiply(realMatrixCi);
+        RealMatrix product2 = product1.multiply(X);
+        RealMatrix IdentityMatrix = MatrixUtils.createRealIdentityMatrix(realMatrixXX.getColumnDimension());//ftiaxnei monadiaio pinaka
+        RealMatrix regularization = IdentityMatrix.scalarMultiply(l);
+        RealMatrix inverseTerm = product2.add(regularization);
+        RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
+        //System.out.println(Inverse.getRowDimension() + " " + Inverse.getColumnDimension());
+        RealMatrix multiplication2 = Xtranspose.multiply(realMatrixCi);
         double[] pi_data = sparse_m.getColumn(item);
-        RealMatrix pi = MatrixUtils.createColumnRealMatrix(pi_data);//ftiaxnei to p(i)
-        RealMatrix product3 = Xtranspose.multiply(realMatrixCi);
-        RealMatrix product4 = product3.multiply(pi);
-        RealMatrix y_i = Inverse.multiply(product4);
+        RealMatrix pi = MatrixUtils.createColumnRealMatrix(pi_data);//ftiaxnei to p(u)
+        //System.out.println(pu.getRowDimension() + " " + pu.getColumnDimension());
+        RealMatrix multiplication3 = multiplication2.multiply(pi);
+        RealMatrix y_i = Inverse.multiply(multiplication3);
 
         return y_i;
     }
@@ -167,17 +172,16 @@ public class WorkerClass extends Thread implements Worker  {
             //first we will compute all the user factors!!
             RealMatrix YY = worker.preCalculateYY(Y).copy();//we compute Y^T * Y
             //for each user
-            for(int user = 0; user < sparse_m.getRowDimension(); user++){
-                worker.calculateCuMatrix(user,Cmatrix);
-                System.out.println(YY.getRowDimension());
-                X.setRowMatrix(user,worker.calculate_x_u(user,YY,worker.getCu()));
+            for(int user = 0; user < sparse_m.getRowDimension(); user++) {
+                worker.calculateCuMatrix(user, Cmatrix);
+                X.setRowMatrix(user, worker.calculate_x_u(user, YY, worker.getCu()).transpose());
             }
             //we will compute all the item factors!!
             RealMatrix XX = worker.preCalculateXX(X).copy();//we compute X^T * X
             //for each item
             for(int item = 0; item < sparse_m.getColumnDimension(); item++){
                 worker.calculateCiMatrix(item,Cmatrix);
-                Y.setColumnMatrix(item,worker.calculate_y_i(item,XX,worker.getCi()));
+                Y.setRowMatrix(item,worker.calculate_y_i(item,XX,worker.getCi()).transpose());
             }
         }
     }
