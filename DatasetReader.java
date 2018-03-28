@@ -8,8 +8,7 @@ public class DatasetReader {
 
     public static RealMatrix DatasetReader(String excelFileName){
 
-        RealMatrix data = MatrixUtils.createRealMatrix(764,1963);
-   //     RealMatrix zerodata = MatrixUtils.createRealMatrix(764,1963);
+        RealMatrix data = MatrixUtils.createRealMatrix(765,1965); // creating our realmatrix array that has the users rating for any poi
 
       //  System.out.println(data);
 
@@ -18,32 +17,34 @@ public class DatasetReader {
         try {
             bufferedReader = new BufferedReader(new FileReader(excelFileName));
 
-            CSVReader csvReader = new CSVReader(bufferedReader);
-            String [] table;
-
+            CSVReader csvReader = new CSVReader(bufferedReader); // helps to read csv files
+            String [] table; // helping array that keeps the users rating
 
             while ((table = csvReader.readNext()) != null)
             {
-                data.setEntry(Integer.parseInt(table[0].trim()),Integer.parseInt(table[1].trim()),Integer.parseInt(table[2].trim()));
+                data.setEntry(Integer.parseInt(table[0].trim()),Integer.parseInt(table[1].trim()),Integer.parseInt(table[2].trim())); // setting the score of a specific poi from a specific user
+                //table[0] --> is the row (user)
+                //table[1[ --> is the column (poi)
+                //table[2] --> is the rate of a specific poi (score)
          //       System.out.println(table[0] + table[1] + table[2]);
             }
   //          System.out.println("\n\n" + "aaaaaaaaaaaaaaaek");
-            System.out.println("/n" + "\n");
-            System.out.println(data);
+ //           System.out.println("/n" + "\n");
+ //           System.out.println(data);
 
-            System.out.println("/n" + "\n");
+  //          System.out.println("/n" + "\n");
 
-           for (int i = 0; i < 765; i++)
-           {
+/*           for (int i = 0; i < 765; i++)
+             {
                 for(int j = 0; j < 1964; j++) {
                     if (data.getEntry(i, j) != 0)
                         System.out.print(data.getEntry(i,j) + "  " + i + "  " + j + "  " );
                     //    data.setEntry(i, j, 10);
-                }
-           }
+             }
+           }*/
 
-            System.out.println("/n" + "\n");
-           System.out.println(data);
+ //           System.out.println("/n" + "\n");
+//           System.out.println(data);
         }
         catch (FileNotFoundException filenotfoundexpeption){
             System.err.println("Error finding the file.");
@@ -64,12 +65,12 @@ public class DatasetReader {
 
     public static void main(String args[]) throws IOException{
 
-        String fileName = "input_matrix_no_zeros.csv";
+        String fileName = "input_matrix_no_zeros.csv"; // fileName of the excel file
 
-        RealMatrix Master_Data;
+        RealMatrix Master_Data; // a realmatrix array that has poi's rating without any further computation
         Master_Data = DatasetReader(fileName);
-        System.out.println(Master_Data);
 
+ //       System.out.println(Master_Data);
     }
 
 }
