@@ -1,0 +1,128 @@
+import com.opencsv.CSVReader;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+
+import java.io.*;
+
+public class DatasetReader {
+
+    public static RealMatrix DatasetReader(String excelFileName){
+
+        RealMatrix data = MatrixUtils.createRealMatrix(764,1963);
+   //     RealMatrix zerodata = MatrixUtils.createRealMatrix(764,1963);
+
+      //  System.out.println(data);
+
+        BufferedReader bufferedReader = null;
+
+        try {
+            bufferedReader = new BufferedReader(new FileReader(excelFileName));
+
+            CSVReader csvReader = new CSVReader(bufferedReader);
+            String [] table;
+
+
+            while ((table = csvReader.readNext()) != null)
+            {
+                data.setEntry(Integer.parseInt(table[0].trim()),Integer.parseInt(table[1].trim()),Integer.parseInt(table[2].trim()));
+         //       System.out.println(table[0] + table[1] + table[2]);
+            }
+  //          System.out.println("\n\n" + "aaaaaaaaaaaaaaaek");
+            System.out.println("/n" + "\n");
+            System.out.println(data);
+
+            System.out.println("/n" + "\n");
+
+           for (int i = 0; i < 765; i++)
+           {
+                for(int j = 0; j < 1964; j++) {
+                    if (data.getEntry(i, j) != 0)
+                        System.out.print(data.getEntry(i,j) + "  " + i + "  " + j + "  " );
+                    //    data.setEntry(i, j, 10);
+                }
+           }
+
+            System.out.println("/n" + "\n");
+           System.out.println(data);
+        }
+        catch (FileNotFoundException filenotfoundexpeption){
+            System.err.println("Error finding the file.");
+        }
+        catch (IOException io){
+            System.err.println("Error closing file.");
+
+        }
+
+        try {
+            bufferedReader.close();
+        }catch (IOException e){
+            System.err.println("Error closing file.");
+        }
+
+        return data;
+    }
+
+    public static void main(String args[]) throws IOException{
+
+        String fileName = "input_matrix_no_zeros.csv";
+
+        RealMatrix Master_Data;
+        Master_Data = DatasetReader(fileName);
+        System.out.println(Master_Data);
+
+    }
+
+}
+
+
+/* import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.FormulaEvaluator;
+import org.apache.poi.ss.usermodel.Row;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+
+public class DatasetReader {
+
+    public static RealMatrix DatasetReader(String excelFileName) throws IOException {
+
+        RealMatrix data = MatrixUtils.createRealMatrix(764,1963);
+
+
+        FileInputStream fileInputStream = new FileInputStream(new File(excelFileName));
+
+        HSSFWorkbook wb = new HSSFWorkbook(fileInputStream); //create workbook instance that refers to our .csv file
+
+        HSSFSheet sheet = wb.getSheetAt(0); //creating a sheet objevt to retrive the sheet
+
+        FormulaEvaluator formulaEvaluator = wb.getCreationHelper().createFormulaEvaluator(); // that is for evaluate the cell type
+
+        for (Row row : sheet){
+            for(Cell cell : row){
+                if(formulaEvaluator.evaluateInCell(cell).getCellType() == Cell.CELL_TYPE_NUMERIC)
+                {
+                    System.out.println(cell.getNumericCellValue() + " \t\t" + "\n" );
+                }
+            }
+
+        }
+
+        return data;
+    }
+
+    public static void main(String args[]) throws IOException{
+
+        String fileName = "input_matrix_no_zeros.csv";
+
+        RealMatrix MasterData;
+        MasterData = DatasetReader(fileName);
+
+    }
+
+} */
