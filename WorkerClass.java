@@ -14,6 +14,7 @@ public class WorkerClass extends Thread implements Worker  {
     private static RealMatrix X = MatrixUtils.createRealMatrix(200,20);
     private static RealMatrix Y = MatrixUtils.createRealMatrix(200,20);
     private RealMatrix Cu,Ci;
+    private String status = "worker";
 
     public WorkerClass(int availableProcessors,long availableMemory){
         this.availableProcessors = availableProcessors;
@@ -207,6 +208,8 @@ public class WorkerClass extends Thread implements Worker  {
 
         return TotalNorm;
     }
+    
+    public String getStatus(){return status;}
 
 
 
