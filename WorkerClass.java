@@ -59,6 +59,8 @@ public class WorkerClass extends Thread implements Worker  {
             requestSocket = new Socket("localhost",10001);
             out = new ObjectOutputStream(requestSocket.getOutputStream());
             in = new ObjectInputStream(requestSocket.getInputStream());
+            out.writeObject(status);
+            out.flush();
             out.writeObject(Runtime.getRuntime().availableProcessors());
             out.flush();
             out.writeObject(Runtime.getRuntime().freeMemory());
