@@ -1,21 +1,24 @@
 import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.OpenMapRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 
-public class MasterClass implements Master {
+public class MasterClass extends Thread implements Master {
+    ObjectInputStream in;
+    ObjectOutputStream out;
     ServerSocket providerSocket;
     Socket connection = null;
     private RealMatrix R,P,C;
-    int numberOfConnections=1;
-
+    int numberOfConnections=0;
+    int workersNo=0;
+    int clientsNo=0;
+    ArrayList<Object> Workers = new ArrayList<Object>();//keep number and name of workers
+    ArrayList<Object> Clients = new ArrayList<Object>();//keep number and name of clients connected
     Map<Object,Object> sourcesCore = new HashMap<Object, Object>();
     Map<Object,Object> sourcesMemory = new HashMap<Object,Object>();
-    ArrayList<Object> clients = new ArrayList<Object>();
-    Vector<Object> finalRank = new Vector<Object>();
+
 
     public void initialize() {
 
@@ -23,18 +26,28 @@ public class MasterClass implements Master {
             /* Create Server Socket */
             providerSocket = new ServerSocket(10001, 10);//mexri 10 exyphretei mpainei sto initial buffer
             while (true) {
+
                 /* Accept the connection */
                 connection = providerSocket.accept();
-                System.out.println("Got a new connection...");
-                /* Handle the request */
-                requestHandler(connection);
-                numberOfConnections++;
 
+                System.out.println("Got a new connection...");
+
+                /* Handle the request */
+                Thread t1 = new Thread(()->{
+                    numberOfConnections++;
+                    System.out.println("Connection number: " + numberOfConnections);
+                    try {
+                        requestHandler(connection);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (ClassNotFoundException e) {
+                        e.printStackTrace();
+                    }
+                });
+                t1.run();
             }
         } catch (IOException ioException) {
             ioException.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
         } finally {
             try {
                 providerSocket.close();
@@ -42,56 +55,51 @@ public class MasterClass implements Master {
                 ioException.printStackTrace();
             }
         }
+        Rank(sourcesCore);
+        Rank(sourcesMemory);
     }
 
     public void requestHandler(Socket connection) throws IOException, ClassNotFoundException {
-        ObjectInputStream in = new ObjectInputStream(connection.getInputStream());
-        ObjectOutputStream out = new ObjectOutputStream(connection.getOutputStream());
-        while(true){
-            Object numberOfCores = in.readObject();
-            Object availiableMemory = in.readObject();
-            Object gigamem = availiableMemory;
+        out = new ObjectOutputStream(connection.getOutputStream());
+        in = new ObjectInputStream(connection.getInputStream());
+        Object status = in.readObject();
+        System.out.println("Connected status: " + status);
+        Object numberOfCores = in.readObject();
+        Object availableMemory = in.readObject();
+        if(status.equals("worker")){
+            workersNo++;
+            Object gigamem = availableMemory;
             double mem = ((Number) gigamem).doubleValue();
-            System.out.println("Client "+numberOfConnections+" has number of cores: "+ numberOfCores+" and available memory(GB): "+ mem/(1024*1024*1024));
-            Object name = "Client_"+numberOfConnections;
-            clients.add(name);
+            Object name = "Worker_"+workersNo;
+            Workers.add(name);
+            System.out.println(name + " has number of cores: " +numberOfCores+ " and available memory(GB): " + mem/(1024*1024*1024));
             sourcesCore.put(name,numberOfCores);
-            sourcesMemory.put(name,availiableMemory);
-            Rank(sourcesCore,sourcesMemory);
+            sourcesMemory.put(name,availableMemory);
+        }else if(status.equals("client")){
+            clientsNo++;
+            Object name = "Client_"+clientsNo;
+            Clients.add(name);
+            System.out.println(name + " connected as android client");
         }
+
     }
 
-    public void Rank(Map<Object, Object> sourceCPU, Map<Object, Object> sourceMEM){
+    public void Rank(Map<Object, Object> source){
 
-        Map<Object, Object> map1 = sortByValues(sourceCPU);
-        Map<Object, Object> map2 = sortByValues(sourceMEM);
+        Map<Object, Object> map = sortByValues(source);
 
-        //CPU SORTING
-        Set set1 = map1.entrySet();
-        Iterator iterator1 = set1.iterator();
-        while(iterator1.hasNext()) {
-            Map.Entry cpu = (Map.Entry)iterator1.next();
-            System.out.print(cpu.getKey() + ": ");
-            System.out.println(cpu.getValue());
-        }
-
-        //MEMORY SORTING
-        Set set2 = map2.entrySet();
+        Set set2 = map.entrySet();
         Iterator iterator2 = set2.iterator();
         while(iterator2.hasNext()) {
-            Map.Entry memory = (Map.Entry)iterator2.next();
-            System.out.print(memory.getKey() + ": ");
-            System.out.println(memory.getValue());
+            Map.Entry me2 = (Map.Entry)iterator2.next();
+            System.out.print(me2.getKey() + ": ");
+            System.out.println(me2.getValue());
         }
-
-       // List<Object> indexes1 = new ArrayList<Object>(map1.keySet());
-       // List<Object> indexes2 = new ArrayList<Object>(map2.keySet());
-
     }
 
-    //overided comperator
     private static HashMap sortByValues(Map<Object, Object> map) {
         List list = new LinkedList(map.entrySet());
+        // Defined Custom Comparator here
         Collections.sort(list, new Comparator() {
             public int compare(Object o1, Object o2) {
                 return ((Comparable) ((Map.Entry) (o1)).getValue())
@@ -106,6 +114,8 @@ public class MasterClass implements Master {
         }
         return sortedHashMap;
     }
+
+
 
     public static void main(String args[]){
         new MasterClass().initialize();
