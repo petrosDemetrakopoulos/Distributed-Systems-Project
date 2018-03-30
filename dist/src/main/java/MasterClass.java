@@ -8,7 +8,7 @@ import org.apache.commons.math3.util.MathUtils;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-
+//class master
 public class MasterClass extends Thread implements Master,Serializable {
     ObjectInputStream in;
     ObjectOutputStream out;
