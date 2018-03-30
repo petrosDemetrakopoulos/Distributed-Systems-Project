@@ -1,56 +1,55 @@
-package Project;
-
 import org.apache.commons.math3.analysis.function.Inverse;
 import org.apache.commons.math3.linear.*;
 
 import java.io.*;
 import java.net.*;
 
-public class WorkerClass extends Thread implements Worker  {
+public class WorkerClass extends Thread implements Worker {
     private int availableProcessors;
     private long availableMemory;
-    private static RealMatrix sparse_m = MatrixUtils.createRealMatrix(200,200);;
-    private static RealMatrix Cmatrix = MatrixUtils.createRealMatrix(200,200);
-    private static RealMatrix X = MatrixUtils.createRealMatrix(200,20);
-    private static RealMatrix Y = MatrixUtils.createRealMatrix(200,20);
-    private RealMatrix Cu,Ci;
+    private static RealMatrix sparse_m = MatrixUtils.createRealMatrix(200, 200);
+    private static RealMatrix Cmatrix = MatrixUtils.createRealMatrix(200, 200);
+    private static RealMatrix X = MatrixUtils.createRealMatrix(200, 20);
+    private static RealMatrix Y = MatrixUtils.createRealMatrix(200, 20);
+    private RealMatrix Cu, Ci;
     private String status = "worker";
 
-    public WorkerClass(int availableProcessors,long availableMemory){
+    public WorkerClass(int availableProcessors, long availableMemory) {
         this.availableProcessors = availableProcessors;
         this.availableMemory = availableMemory;
     }
 
-    public WorkerClass(){}
+    public WorkerClass() {
+    }
 
-    public void initialize(){
-        new WorkerClass(Runtime.getRuntime().availableProcessors(),Runtime.getRuntime().freeMemory()).start();
-        for(int i = 0; i < 200; i++){
-            for(int j=0; j < 200; j++){
-                if(i%2 == 0){
-                    sparse_m.setEntry(i,j,1);
-                }else{
-                    sparse_m.setEntry(i,j,0);
+    public void initialize() {
+        new WorkerClass(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().freeMemory()).start();
+        for (int i = 0; i < 200; i++) {
+            for (int j = 0; j < 200; j++) {
+                if (i % 2 == 0) {
+                    sparse_m.setEntry(i, j, 1);
+                } else {
+                    sparse_m.setEntry(i, j, 0);
                 }
             }
         }
 
         calculateCMatrix(sparse_m);
 
-        for(int i=0; i < 200; i++){
-            for(int j=0; j < 20; j++){
-                X.setEntry(i,j,sparse_m.getEntry(i,j));
+        for (int i = 0; i < 200; i++) {
+            for (int j = 0; j < 20; j++) {
+                X.setEntry(i, j, sparse_m.getEntry(i, j));
 
             }
         }
-        for(int j=0; j < 200; j++){
-            for(int i=0; i < 20; i++){
-                Y.setEntry(j,i,sparse_m.getEntry(j,i));
+        for (int j = 0; j < 200; j++) {
+            for (int i = 0; i < 20; i++) {
+                Y.setEntry(j, i, sparse_m.getEntry(j, i));
             }
         }
     }
 
-    /*public void run(){
+    public void run(){
         Socket requestSocket = null;
         ObjectInputStream in = null;
         ObjectOutputStream out = null;
@@ -59,12 +58,16 @@ public class WorkerClass extends Thread implements Worker  {
             requestSocket = new Socket("localhost",10001);
             out = new ObjectOutputStream(requestSocket.getOutputStream());
             in = new ObjectInputStream(requestSocket.getInputStream());
+
             out.writeObject(status);
             out.flush();
-            out.writeObject(Runtime.getRuntime().availableProcessors());
+            out.writeObject(availableProcessors);
             out.flush();
-            out.writeObject(Runtime.getRuntime().freeMemory());
+            out.writeObject(availableMemory);
             out.flush();
+            RealMatrix P = (RealMatrix) in.readObject();
+            RealMatrix C = (RealMatrix) in.readObject();
+
 
         }catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
@@ -79,13 +82,13 @@ public class WorkerClass extends Thread implements Worker  {
                 ioException.printStackTrace();
             }
         }
-    }*/
+    }
 
-    public int getAvailableProcessors(){
+    public int getAvailableProcessors() {
         return this.availableProcessors;
     }
 
-    public long getAvailableMemory(){
+    public long getAvailableMemory() {
         return this.availableMemory;
     }
 
@@ -97,12 +100,12 @@ public class WorkerClass extends Thread implements Worker  {
         return Ci;
     }
 
-    public void calculateCMatrix(RealMatrix realMatrix){
+    public void calculateCMatrix(RealMatrix realMatrix) {
 
         int a = 40;
-        for(int i=0; i < 200; i++){
-            for(int j=0; j < 200; j++){
-                Cmatrix.setEntry(i,j, 1 + a* sparse_m.getEntry(i,j));
+        for (int i = 0; i < 200; i++) {
+            for (int j = 0; j < 200; j++) {
+                Cmatrix.setEntry(i, j, 1 + a * sparse_m.getEntry(i, j));
                 //System.out.println(Cmatrix.getEntry(i,j));
             }
         }
@@ -119,18 +122,18 @@ public class WorkerClass extends Thread implements Worker  {
     }
 
     //diagwnios pinakas diastasewn nxn (osa einai ta items) pou sthn diagwnio exei tis protimiseis tou xrhsth u
-    public void calculateCuMatrix(int user,RealMatrix realMatrix){
+    public void calculateCuMatrix(int user, RealMatrix realMatrix) {
         double[] diag_elements = realMatrix.getRow(user);
         Cu = MatrixUtils.createRealDiagonalMatrix(diag_elements);
     }
 
     //diagwnios pinakas diastasewn mxm(osoi einai oi users) pou sthn diagwnio exei tis protimiseis olwn twn users gia to item i
-    public void calculateCiMatrix(int item,RealMatrix realMatrix){
+    public void calculateCiMatrix(int item, RealMatrix realMatrix) {
         double[] diag_elements = realMatrix.getColumn(item);
         Ci = MatrixUtils.createRealDiagonalMatrix(diag_elements);
     }
 
-    public RealMatrix calculate_x_u(int user, RealMatrix realMatrixY, RealMatrix realMatrixCu){
+    public RealMatrix calculate_x_u(int user, RealMatrix realMatrixY, RealMatrix realMatrixCu) {
         //TO x_u EINAI GIA KA8E XRHSTH u!!!
         double l = 0.01;
         RealMatrix Ytranspose = Y.transpose();
@@ -152,7 +155,7 @@ public class WorkerClass extends Thread implements Worker  {
     }
 
 
-    public RealMatrix calculate_y_i(int item, RealMatrix realMatrixX, RealMatrix realMatrixCi){
+    public RealMatrix calculate_y_i(int item, RealMatrix realMatrixX, RealMatrix realMatrixCi) {
         double l = 0.01;
         RealMatrix Xtranspose = X.transpose();
         RealMatrix product1 = Xtranspose.multiply(realMatrixCi);
@@ -173,72 +176,72 @@ public class WorkerClass extends Thread implements Worker  {
     }
 
 
-    public double calculateError(){
-        double ModelPrediction,RealPrediction,CmatrixPred,MeanSquaredError,Difference,Regularization;
+    public double calculateError() {
+        double ModelPrediction, RealPrediction, CmatrixPred, MeanSquaredError, Difference, Regularization;
         double Error = 0.0;
         double TotalError = 0.0;
         double l = 0.01;
-        for(int user=0; user < sparse_m.getRowDimension(); user++){
-            for(int item=0; item < sparse_m.getColumnDimension(); item++){
-                ModelPrediction = X.getRowMatrix(user).multiply(Y.getRowMatrix(item).transpose()).getEntry(0,0);
-                RealPrediction = sparse_m.getEntry(user,item);
-                CmatrixPred = Cmatrix.getEntry(user,item);
+        for (int user = 0; user < sparse_m.getRowDimension(); user++) {
+            for (int item = 0; item < sparse_m.getColumnDimension(); item++) {
+                ModelPrediction = X.getRowMatrix(user).multiply(Y.getRowMatrix(item).transpose()).getEntry(0, 0);
+                RealPrediction = sparse_m.getEntry(user, item);
+                CmatrixPred = Cmatrix.getEntry(user, item);
                 Difference = RealPrediction - ModelPrediction;
-                MeanSquaredError = CmatrixPred *Math.pow(Difference,2);
+                MeanSquaredError = CmatrixPred * Math.pow(Difference, 2);
                 Error = Error + MeanSquaredError;
             }
         }
         Regularization = calculateRegularization();
-        TotalError = TotalError+ l*Regularization;
+        TotalError = TotalError + l * Regularization;
         return TotalError;
     }
 
-    public double calculateRegularization(){
+    public double calculateRegularization() {
         double TotalNorm;
-        double NormForUser=0;
+        double NormForUser = 0;
         double NormForItem = 0;
-        for(int user=0; user<sparse_m.getRowDimension(); user++){
-            NormForUser = NormForUser + Math.pow(X.getRowMatrix(user).getNorm(),2);
+        for (int user = 0; user < sparse_m.getRowDimension(); user++) {
+            NormForUser = NormForUser + Math.pow(X.getRowMatrix(user).getNorm(), 2);
 
         }
 
-        for(int item=0; item<sparse_m.getColumnDimension(); item++){
-            NormForItem = NormForItem + Math.pow(Y.getRowMatrix(item).getNorm(),2);
+        for (int item = 0; item < sparse_m.getColumnDimension(); item++) {
+            NormForItem = NormForItem + Math.pow(Y.getRowMatrix(item).getNorm(), 2);
         }
 
         TotalNorm = NormForUser + NormForItem;
 
         return TotalNorm;
     }
-    
-    public String getStatus(){return status;}
+
+    public String getStatus() {
+        return status;
+    }
 
 
-
-
-    public static void main(String args[]){
+    public static void main(String args[]) {
         WorkerClass worker = new WorkerClass();
         worker.initialize();
         //for 10 sweeps
-        for(int sweep = 0; sweep < 10; sweep++){
+        for (int sweep = 0; sweep < 10; sweep++) {
             //System.out.println("Sweep number: " + sweep);
             //first we will compute all the user factors!!
             //RealMatrix YY = worker.preCalculateYY(Y).copy();//we compute Y^T * Y
             //for each user
-            for(int user = 0; user < sparse_m.getRowDimension(); user++) {
+            for (int user = 0; user < sparse_m.getRowDimension(); user++) {
                 worker.calculateCuMatrix(user, Cmatrix);
                 X.setRowMatrix(user, worker.calculate_x_u(user, Y, worker.getCu()).transpose());
             }
             //we will compute all the item factors!!
             //RealMatrix XX = worker.preCalculateXX(X).copy();//we compute X^T * X
             //for each item
-            for(int item = 0; item < sparse_m.getColumnDimension(); item++){
-                worker.calculateCiMatrix(item,Cmatrix);
-                Y.setRowMatrix(item,worker.calculate_y_i(item,X,worker.getCi()).transpose());
+            for (int item = 0; item < sparse_m.getColumnDimension(); item++) {
+                worker.calculateCiMatrix(item, Cmatrix);
+                Y.setRowMatrix(item, worker.calculate_y_i(item, X, worker.getCi()).transpose());
             }
             double error = worker.calculateError();
             System.out.println("Error : " + error);
-            if(error <= 0.01){
+            if (error <= 0.01) {
                 System.out.println("Threshhold reached");
                 break;
             }
