@@ -21,7 +21,7 @@ public class WorkerClass extends Thread implements Worker {
 
     public WorkerClass() {
     }
-
+    //GEIAAAAAAAAAAAAAAAAAAAAAA
     public void initialize() {
         new WorkerClass(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().freeMemory()).start();
         for (int i = 0; i < 200; i++) {
