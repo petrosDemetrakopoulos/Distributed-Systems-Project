@@ -1,16 +1,20 @@
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.random.JDKRandomGenerator;
+import org.apache.commons.math3.random.RandomAdaptor;
+import org.apache.commons.math3.random.RandomGenerator;
+import org.apache.commons.math3.util.MathUtils;
 
 import java.io.*;
 import java.net.*;
 import java.util.*;
 
-public class MasterClass extends Thread implements Master {
+public class MasterClass extends Thread implements Master,Serializable {
     ObjectInputStream in;
     ObjectOutputStream out;
     ServerSocket providerSocket;
     Socket connection = null;
-    private RealMatrix R,P,C;
+    private RealMatrix dataset,P,C,X,Y;
     int numberOfConnections=0;
     int workersNo=0;
     int clientsNo=0;
@@ -21,6 +25,14 @@ public class MasterClass extends Thread implements Master {
 
 
     public void initialize() {
+        String fileName = "src/main/java/input_matrix_no_zeros.csv";
+        DatasetReader reader = new DatasetReader();
+        dataset = reader.DatasetReader(fileName);
+        C = MatrixUtils.createRealMatrix(dataset.getRowDimension(),dataset.getColumnDimension());
+        P = MatrixUtils.createRealMatrix(dataset.getRowDimension(),dataset.getColumnDimension());
+        calculateCMatrix(dataset);
+        calculatePMatrix(dataset);
+        createXY();
 
         try {
             /* Create Server Socket */
@@ -38,13 +50,11 @@ public class MasterClass extends Thread implements Master {
                     System.out.println("Connection number: " + numberOfConnections);
                     try {
                         requestHandler(connection);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (ClassNotFoundException e) {
+                    } catch (IOException | ClassNotFoundException e) {
                         e.printStackTrace();
                     }
                 });
-                t1.run();
+                t1.start();
             }
         } catch (IOException ioException) {
             ioException.printStackTrace();
@@ -59,14 +69,71 @@ public class MasterClass extends Thread implements Master {
         Rank(sourcesMemory);
     }
 
+    public void calculateCMatrix(RealMatrix realMatrix) {
+        int a = 40;
+        for(int i=0; i < C.getRowDimension(); i++){
+            for(int j=0; j < C.getColumnDimension(); j++){
+                C.setEntry(i,j, 1 + a* realMatrix.getEntry(i,j));
+            }
+        }
+    }
+
+    public void calculatePMatrix(RealMatrix realMatrix) {
+        for(int i=0; i < P.getRowDimension(); i++){
+            for(int j=0; j < P.getColumnDimension(); j++){
+                if(realMatrix.getEntry(i,j) > 0){
+                    P.setEntry(i,j,1);
+                }else{
+                    P.setEntry(i,j,0);
+                }
+            }
+        }
+    }
+
+    public void createXY(){
+        int k=100;
+        X = MatrixUtils.createRealMatrix(dataset.getRowDimension(),k);
+        Y = MatrixUtils.createRealMatrix(dataset.getColumnDimension(),k);
+        Random randomgen = new Random();
+
+        for(int i=0; i<X.getRowDimension(); i++){
+            for(int j=0; j<k; j++) {
+                if (Math.random() < 0.5) {
+                    X.setEntry(i, j, 0);
+                }else{
+                    X.setEntry(i, j, 100 * randomgen.nextDouble());
+                }
+            }
+        }
+
+        for(int i=0; i<Y.getRowDimension(); i++){
+            for(int j=0; j<k; j++) {
+                if (Math.random() < 0.5) {
+                    Y.setEntry(i, j, 0);
+                }else{
+                    Y.setEntry(i, j, 100 * randomgen.nextDouble());
+                }
+            }
+        }
+
+
+    }
+
+
+
     public void requestHandler(Socket connection) throws IOException, ClassNotFoundException {
         out = new ObjectOutputStream(connection.getOutputStream());
         in = new ObjectInputStream(connection.getInputStream());
         Object status = in.readObject();
         System.out.println("Connected status: " + status);
-        Object numberOfCores = in.readObject();
-        Object availableMemory = in.readObject();
         if(status.equals("worker")){
+            Object numberOfCores = in.readObject();
+            Object availableMemory = in.readObject();
+            //Passing pinakes C,P to workers
+            out.writeObject(P);
+            out.flush();
+            out.writeObject(C);
+            out.flush();
             workersNo++;
             Object gigamem = availableMemory;
             double mem = ((Number) gigamem).doubleValue();
@@ -75,6 +142,7 @@ public class MasterClass extends Thread implements Master {
             System.out.println(name + " has number of cores: " +numberOfCores+ " and available memory(GB): " + mem/(1024*1024*1024));
             sourcesCore.put(name,numberOfCores);
             sourcesMemory.put(name,availableMemory);
+
         }else if(status.equals("client")){
             clientsNo++;
             Object name = "Client_"+clientsNo;
