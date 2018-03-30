@@ -30,8 +30,7 @@ public class Server {
 
                 
                 /* Handle the request */
-				Thread t = new ActionsForClients(connection);
-				t.start();
+
             }
  
         } catch (IOException ioException) {
