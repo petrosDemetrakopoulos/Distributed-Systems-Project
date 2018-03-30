@@ -7,8 +7,8 @@ import java.net.*;
 public class WorkerClass extends Thread implements Worker {
     private int availableProcessors;
     private long availableMemory;
-    private static RealMatrix sparse_m = MatrixUtils.createRealMatrix(200, 200);
-    private static RealMatrix Cmatrix = MatrixUtils.createRealMatrix(200, 200);
+    private static RealMatrix P;
+    private static RealMatrix Cmatrix;
     private static RealMatrix X = MatrixUtils.createRealMatrix(200, 20);
     private static RealMatrix Y = MatrixUtils.createRealMatrix(200, 20);
     private RealMatrix Cu, Ci;
@@ -19,34 +19,11 @@ public class WorkerClass extends Thread implements Worker {
         this.availableMemory = availableMemory;
     }
 
-    public WorkerClass() {
-    }
-    //GEIAAAAAAAAAAAAAAAAAAAAAA
+    public WorkerClass() {}
+
+
     public void initialize() {
         new WorkerClass(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().freeMemory()).start();
-        for (int i = 0; i < 200; i++) {
-            for (int j = 0; j < 200; j++) {
-                if (i % 2 == 0) {
-                    sparse_m.setEntry(i, j, 1);
-                } else {
-                    sparse_m.setEntry(i, j, 0);
-                }
-            }
-        }
-
-        calculateCMatrix(sparse_m);
-
-        for (int i = 0; i < 200; i++) {
-            for (int j = 0; j < 20; j++) {
-                X.setEntry(i, j, sparse_m.getEntry(i, j));
-
-            }
-        }
-        for (int j = 0; j < 200; j++) {
-            for (int i = 0; i < 20; i++) {
-                Y.setEntry(j, i, sparse_m.getEntry(j, i));
-            }
-        }
     }
 
     public void run(){
@@ -66,7 +43,7 @@ public class WorkerClass extends Thread implements Worker {
             out.writeObject(availableMemory);
             out.flush();
             RealMatrix P = (RealMatrix) in.readObject();
-            RealMatrix C = (RealMatrix) in.readObject();
+            RealMatrix Cmatrix = (RealMatrix) in.readObject();
 
 
         }catch (UnknownHostException unknownHost) {
@@ -102,13 +79,6 @@ public class WorkerClass extends Thread implements Worker {
 
     public void calculateCMatrix(RealMatrix realMatrix) {
 
-        int a = 40;
-        for (int i = 0; i < 200; i++) {
-            for (int j = 0; j < 200; j++) {
-                Cmatrix.setEntry(i, j, 1 + a * sparse_m.getEntry(i, j));
-                //System.out.println(Cmatrix.getEntry(i,j));
-            }
-        }
     }
 
     public RealMatrix preCalculateXX(RealMatrix realMatrix) {
@@ -145,7 +115,7 @@ public class WorkerClass extends Thread implements Worker {
         RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
         //System.out.println(Inverse.getRowDimension() + " " + Inverse.getColumnDimension());
         RealMatrix multiplication2 = Ytranspose.multiply(realMatrixCu);
-        double[] pu_data = sparse_m.getRow(user);
+        double[] pu_data = P.getRow(user);
         RealMatrix pu = MatrixUtils.createColumnRealMatrix(pu_data);//ftiaxnei to p(u)
         //System.out.println(pu.getRowDimension() + " " + pu.getColumnDimension());
         RealMatrix multiplication3 = multiplication2.multiply(pu);
@@ -166,7 +136,7 @@ public class WorkerClass extends Thread implements Worker {
         RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
         //System.out.println(Inverse.getRowDimension() + " " + Inverse.getColumnDimension());
         RealMatrix multiplication2 = Xtranspose.multiply(realMatrixCi);
-        double[] pi_data = sparse_m.getColumn(item);
+        double[] pi_data = P.getColumn(item);
         RealMatrix pi = MatrixUtils.createColumnRealMatrix(pi_data);//ftiaxnei to p(u)
         //System.out.println(pu.getRowDimension() + " " + pu.getColumnDimension());
         RealMatrix multiplication3 = multiplication2.multiply(pi);
@@ -181,10 +151,10 @@ public class WorkerClass extends Thread implements Worker {
         double Error = 0.0;
         double TotalError = 0.0;
         double l = 0.01;
-        for (int user = 0; user < sparse_m.getRowDimension(); user++) {
-            for (int item = 0; item < sparse_m.getColumnDimension(); item++) {
+        for (int user = 0; user < P.getRowDimension(); user++) {
+            for (int item = 0; item < P.getColumnDimension(); item++) {
                 ModelPrediction = X.getRowMatrix(user).multiply(Y.getRowMatrix(item).transpose()).getEntry(0, 0);
-                RealPrediction = sparse_m.getEntry(user, item);
+                RealPrediction = P.getEntry(user, item);
                 CmatrixPred = Cmatrix.getEntry(user, item);
                 Difference = RealPrediction - ModelPrediction;
                 MeanSquaredError = CmatrixPred * Math.pow(Difference, 2);
@@ -200,12 +170,12 @@ public class WorkerClass extends Thread implements Worker {
         double TotalNorm;
         double NormForUser = 0;
         double NormForItem = 0;
-        for (int user = 0; user < sparse_m.getRowDimension(); user++) {
+        for (int user = 0; user < P.getRowDimension(); user++) {
             NormForUser = NormForUser + Math.pow(X.getRowMatrix(user).getNorm(), 2);
 
         }
 
-        for (int item = 0; item < sparse_m.getColumnDimension(); item++) {
+        for (int item = 0; item < P.getColumnDimension(); item++) {
             NormForItem = NormForItem + Math.pow(Y.getRowMatrix(item).getNorm(), 2);
         }
 
@@ -228,14 +198,14 @@ public class WorkerClass extends Thread implements Worker {
             //first we will compute all the user factors!!
             //RealMatrix YY = worker.preCalculateYY(Y).copy();//we compute Y^T * Y
             //for each user
-            for (int user = 0; user < sparse_m.getRowDimension(); user++) {
+            for (int user = 0; user < P.getRowDimension(); user++) {
                 worker.calculateCuMatrix(user, Cmatrix);
                 X.setRowMatrix(user, worker.calculate_x_u(user, Y, worker.getCu()).transpose());
             }
             //we will compute all the item factors!!
             //RealMatrix XX = worker.preCalculateXX(X).copy();//we compute X^T * X
             //for each item
-            for (int item = 0; item < sparse_m.getColumnDimension(); item++) {
+            for (int item = 0; item < P.getColumnDimension(); item++) {
                 worker.calculateCiMatrix(item, Cmatrix);
                 Y.setRowMatrix(item, worker.calculate_y_i(item, X, worker.getCi()).transpose());
             }
