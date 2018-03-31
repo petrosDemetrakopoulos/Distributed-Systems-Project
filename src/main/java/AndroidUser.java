@@ -24,11 +24,11 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
             out.writeObject("user");
             out.flush();
 
-            System.out.println("Please enter a username");
+            System.out.println("Please enter a username : ");
             Scanner scanner = new Scanner(System.in);
             username = scanner.next();
-       //     out.writeObject(username);
-      //      out.flush();
+            out.writeObject(username);
+            out.flush();
             t1 = new Thread(()->{
                 try {
                     in = new ObjectInputStream(requestSocket.getInputStream());
@@ -87,9 +87,9 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
 
         while (true){
             System.out.println("Please select from the options below :");
-            System.out.println("1) 5 top POIs");
-            System.out.println("2) 10 top POIs");
-            System.out.println("3) 15 top POIs");
+            System.out.println("1) Give me the 5 top POIs");
+            System.out.println("2) Give me the 10 top POIs");
+            System.out.println("3) Give me the 15 top POIs");
             System.out.println("4) Exit");
             Scanner scanner = new Scanner(System.in);
             String inp = scanner.next();
