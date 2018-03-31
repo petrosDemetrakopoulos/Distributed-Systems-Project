@@ -14,6 +14,7 @@ public class MasterClass extends Thread implements Master {
     int numberOfConnections=0;
     int workersNo=0;
     int clientsNo=0;
+    Object name;
     ArrayList<Object> Workers = new ArrayList<Object>();//keep number and name of workers
     ArrayList<Object> Clients = new ArrayList<Object>();//keep number and name of clients connected
     Map<Object,Object> sourcesCore = new HashMap<Object, Object>();
@@ -72,23 +73,24 @@ public class MasterClass extends Thread implements Master {
             workersNo++;
             Object gigamem = availableMemory;
             double mem = ((Number) gigamem).doubleValue();
-            Object name = "Worker_"+workersNo;
+            name = "Worker_"+workersNo;
             Workers.add(name);
             System.out.println(name + " has " +numberOfCores+ " cores and available memory(GB): " + mem/(1024*1024*1024));
             sourcesCore.put(name,numberOfCores);
             sourcesMemory.put(name,availableMemory);
         }else if(status.equals("user")){
             clientsNo++;
-            Object name = "Client_"+clientsNo;
+            name = "Client_"+clientsNo;
             Clients.add(name);
             System.out.println(name + " connected as android client");
-            out.writeObject("Welcome! " + name);
+            Object clientName = in.readObject();
+            out.writeObject("Welcome! " + clientName);
             out.flush();
         }
      //   Object mer = in.readObject();
       //  System.out.println("++" + (String)mer + "++");
         Object msg = in.readObject();
-        System.out.println("***" + (String)msg + "***");
+     //   System.out.println("***" + (String)msg + "***");
         StringTokenizer st = new StringTokenizer((String)msg);
         String first = st.nextToken();
         while (!first.equals("LOGOUT")){
@@ -103,9 +105,8 @@ public class MasterClass extends Thread implements Master {
             Clients.remove(un);
             clientsNo--;
             numberOfConnections--;
-            System.out.println("User " + un + "logged out");
+            System.out.println("\nUser :  " + name + " just logged out!\n");
         }
-
 
 
     }
