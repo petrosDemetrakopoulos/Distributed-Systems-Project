@@ -4,84 +4,51 @@ import org.apache.commons.math3.linear.*;
 import java.io.*;
 import java.net.*;
 
-public class WorkerClass extends Thread implements Worker {
+public class WorkerClass implements Worker {
     private int availableProcessors;
     private long availableMemory;
-    private static RealMatrix sparse_m = MatrixUtils.createRealMatrix(200, 200);
-    private static RealMatrix Cmatrix = MatrixUtils.createRealMatrix(200, 200);
-    private static RealMatrix X = MatrixUtils.createRealMatrix(200, 20);
-    private static RealMatrix Y = MatrixUtils.createRealMatrix(200, 20);
+    private static RealMatrix P;
+    private static RealMatrix Cmatrix;
+    private RealMatrix X = MatrixUtils.createRealMatrix(200, 20);
+    private RealMatrix Y = MatrixUtils.createRealMatrix(200, 20);
     private RealMatrix Cu, Ci;
-    private String status = "worker";
-
-    public WorkerClass(int availableProcessors, long availableMemory) {
-        this.availableProcessors = availableProcessors;
-        this.availableMemory = availableMemory;
-    }
-
-    public WorkerClass() {
-    }
+    private static String status = "worker";
 
     public void initialize() {
-        new WorkerClass(Runtime.getRuntime().availableProcessors(), Runtime.getRuntime().freeMemory()).start();
-        for (int i = 0; i < 200; i++) {
-            for (int j = 0; j < 200; j++) {
-                if (i % 2 == 0) {
-                    sparse_m.setEntry(i, j, 1);
-                } else {
-                    sparse_m.setEntry(i, j, 0);
+        Thread t1 = new Thread(()->{
+            Socket requestSocket = null;
+            ObjectInputStream in = null;
+            ObjectOutputStream out = null;
+            availableProcessors = Runtime.getRuntime().availableProcessors();
+            availableMemory = Runtime.getRuntime().freeMemory();
+            try{
+                requestSocket = new Socket("localhost",10001);
+                out = new ObjectOutputStream(requestSocket.getOutputStream());
+                in = new ObjectInputStream(requestSocket.getInputStream());
+                out.writeObject(status);
+                out.flush();
+                out.writeObject(availableProcessors);
+                out.flush();
+                out.writeObject(availableMemory);
+                out.flush();
+                P = (RealMatrix) in.readObject();
+                Cmatrix = (RealMatrix) in.readObject();
+                train(P,Cmatrix);
+            }catch (UnknownHostException unknownHost) {
+                System.err.println("You are trying to connect to an unknown host!");
+            } catch (Exception ioException) {
+                ioException.printStackTrace();
+            } finally {
+                try {
+                    in.close();
+                    out.close();
+                    requestSocket.close();
+                } catch (IOException ioException) {
+                    ioException.printStackTrace();
                 }
             }
-        }
-
-        calculateCMatrix(sparse_m);
-
-        for (int i = 0; i < 200; i++) {
-            for (int j = 0; j < 20; j++) {
-                X.setEntry(i, j, sparse_m.getEntry(i, j));
-
-            }
-        }
-        for (int j = 0; j < 200; j++) {
-            for (int i = 0; i < 20; i++) {
-                Y.setEntry(j, i, sparse_m.getEntry(j, i));
-            }
-        }
-    }
-
-    public void run(){
-        Socket requestSocket = null;
-        ObjectInputStream in = null;
-        ObjectOutputStream out = null;
-
-        try{
-            requestSocket = new Socket("localhost",10001);
-            out = new ObjectOutputStream(requestSocket.getOutputStream());
-            in = new ObjectInputStream(requestSocket.getInputStream());
-
-            out.writeObject(status);
-            out.flush();
-            out.writeObject(availableProcessors);
-            out.flush();
-            out.writeObject(availableMemory);
-            out.flush();
-            RealMatrix P = (RealMatrix) in.readObject();
-            RealMatrix C = (RealMatrix) in.readObject();
-
-
-        }catch (UnknownHostException unknownHost) {
-            System.err.println("You are trying to connect to an unknown host!");
-        } catch (Exception ioException) {
-            ioException.printStackTrace();
-        } finally {
-            try {
-                in.close();
-                out.close();
-                requestSocket.close();
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            }
-        }
+        });
+        t1.start();
     }
 
     public int getAvailableProcessors() {
@@ -100,15 +67,20 @@ public class WorkerClass extends Thread implements Worker {
         return Ci;
     }
 
-    public void calculateCMatrix(RealMatrix realMatrix) {
+    public RealMatrix getP() {
+        return P;
+    }
 
-        int a = 40;
-        for (int i = 0; i < 200; i++) {
-            for (int j = 0; j < 200; j++) {
-                Cmatrix.setEntry(i, j, 1 + a * sparse_m.getEntry(i, j));
-                //System.out.println(Cmatrix.getEntry(i,j));
-            }
-        }
+    public RealMatrix getCmatrix() {
+        return Cmatrix;
+    }
+
+    public RealMatrix getX() {
+        return X;
+    }
+
+    public RealMatrix getY() {
+        return Y;
     }
 
     public RealMatrix preCalculateXX(RealMatrix realMatrix) {
@@ -136,6 +108,7 @@ public class WorkerClass extends Thread implements Worker {
     public RealMatrix calculate_x_u(int user, RealMatrix realMatrixY, RealMatrix realMatrixCu) {
         //TO x_u EINAI GIA KA8E XRHSTH u!!!
         double l = 0.01;
+        System.out.println(P.getRowDimension());
         RealMatrix Ytranspose = Y.transpose();
         RealMatrix product1 = Ytranspose.multiply(realMatrixCu);
         RealMatrix product2 = product1.multiply(Y);
@@ -145,7 +118,7 @@ public class WorkerClass extends Thread implements Worker {
         RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
         //System.out.println(Inverse.getRowDimension() + " " + Inverse.getColumnDimension());
         RealMatrix multiplication2 = Ytranspose.multiply(realMatrixCu);
-        double[] pu_data = sparse_m.getRow(user);
+        double[] pu_data = P.getRow(user);
         RealMatrix pu = MatrixUtils.createColumnRealMatrix(pu_data);//ftiaxnei to p(u)
         //System.out.println(pu.getRowDimension() + " " + pu.getColumnDimension());
         RealMatrix multiplication3 = multiplication2.multiply(pu);
@@ -166,7 +139,7 @@ public class WorkerClass extends Thread implements Worker {
         RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
         //System.out.println(Inverse.getRowDimension() + " " + Inverse.getColumnDimension());
         RealMatrix multiplication2 = Xtranspose.multiply(realMatrixCi);
-        double[] pi_data = sparse_m.getColumn(item);
+        double[] pi_data = P.getColumn(item);
         RealMatrix pi = MatrixUtils.createColumnRealMatrix(pi_data);//ftiaxnei to p(u)
         //System.out.println(pu.getRowDimension() + " " + pu.getColumnDimension());
         RealMatrix multiplication3 = multiplication2.multiply(pi);
@@ -181,10 +154,10 @@ public class WorkerClass extends Thread implements Worker {
         double Error = 0.0;
         double TotalError = 0.0;
         double l = 0.01;
-        for (int user = 0; user < sparse_m.getRowDimension(); user++) {
-            for (int item = 0; item < sparse_m.getColumnDimension(); item++) {
+        for (int user = 0; user < P.getRowDimension(); user++) {
+            for (int item = 0; item < P.getColumnDimension(); item++) {
                 ModelPrediction = X.getRowMatrix(user).multiply(Y.getRowMatrix(item).transpose()).getEntry(0, 0);
-                RealPrediction = sparse_m.getEntry(user, item);
+                RealPrediction = P.getEntry(user, item);
                 CmatrixPred = Cmatrix.getEntry(user, item);
                 Difference = RealPrediction - ModelPrediction;
                 MeanSquaredError = CmatrixPred * Math.pow(Difference, 2);
@@ -200,12 +173,12 @@ public class WorkerClass extends Thread implements Worker {
         double TotalNorm;
         double NormForUser = 0;
         double NormForItem = 0;
-        for (int user = 0; user < sparse_m.getRowDimension(); user++) {
+        for (int user = 0; user < P.getRowDimension(); user++) {
             NormForUser = NormForUser + Math.pow(X.getRowMatrix(user).getNorm(), 2);
 
         }
 
-        for (int item = 0; item < sparse_m.getColumnDimension(); item++) {
+        for (int item = 0; item < P.getColumnDimension(); item++) {
             NormForItem = NormForItem + Math.pow(Y.getRowMatrix(item).getNorm(), 2);
         }
 
@@ -218,34 +191,36 @@ public class WorkerClass extends Thread implements Worker {
         return status;
     }
 
-
-    public static void main(String args[]) {
-        WorkerClass worker = new WorkerClass();
-        worker.initialize();
-        //for 10 sweeps
+    public void train(RealMatrix P,RealMatrix Cmatrix){
         for (int sweep = 0; sweep < 10; sweep++) {
             //System.out.println("Sweep number: " + sweep);
             //first we will compute all the user factors!!
             //RealMatrix YY = worker.preCalculateYY(Y).copy();//we compute Y^T * Y
             //for each user
-            for (int user = 0; user < sparse_m.getRowDimension(); user++) {
-                worker.calculateCuMatrix(user, Cmatrix);
-                X.setRowMatrix(user, worker.calculate_x_u(user, Y, worker.getCu()).transpose());
+            for (int user = 0; user < P.getRowDimension(); user++) {
+                calculateCuMatrix(user, Cmatrix);
+                X.setRowMatrix(user, calculate_x_u(user, Y, getCu()).transpose());
             }
             //we will compute all the item factors!!
             //RealMatrix XX = worker.preCalculateXX(X).copy();//we compute X^T * X
             //for each item
-            for (int item = 0; item < sparse_m.getColumnDimension(); item++) {
-                worker.calculateCiMatrix(item, Cmatrix);
-                Y.setRowMatrix(item, worker.calculate_y_i(item, X, worker.getCi()).transpose());
+            for (int item = 0; item < P.getColumnDimension(); item++) {
+                calculateCiMatrix(item, Cmatrix);
+                Y.setRowMatrix(item, calculate_y_i(item, X, getCi()).transpose());
             }
-            double error = worker.calculateError();
+            double error = calculateError();
             System.out.println("Error : " + error);
             if (error <= 0.01) {
                 System.out.println("Threshhold reached");
                 break;
             }
         }
-
     }
+
+    public static void main(String args[]) {
+        new WorkerClass().initialize();
+    }
+
+
 }
+
