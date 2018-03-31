@@ -66,7 +66,7 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
           //  out = new ObjectOutputStream(requestSocket.getOutputStream());
             out.writeObject(username);
             out.flush();
-            out.writeObject(numOfPois);
+            out.writeObject(numOfPois.toString());
             out.flush();
         }  catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
