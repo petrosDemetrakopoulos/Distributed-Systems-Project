@@ -14,8 +14,14 @@ public class WorkerClass implements Worker {
     private RealMatrix Cu, Ci;
     private static String status = "worker";
 
+    public WorkerClass(String status){
+        this.status=status;
+    }
+
+    public WorkerClass(){}
+
     public void initialize() {
-        Thread t1 = new Thread(()->{
+       // Thread t1 = new Thread(()->{
             Socket requestSocket = null;
             ObjectInputStream in = null;
             ObjectOutputStream out = null;
@@ -33,7 +39,6 @@ public class WorkerClass implements Worker {
                 out.flush();
                 P = (RealMatrix) in.readObject();
                 Cmatrix = (RealMatrix) in.readObject();
-                train(P,Cmatrix);
             }catch (UnknownHostException unknownHost) {
                 System.err.println("You are trying to connect to an unknown host!");
             } catch (Exception ioException) {
@@ -47,8 +52,10 @@ public class WorkerClass implements Worker {
                     ioException.printStackTrace();
                 }
             }
-        });
-        t1.start();
+        //});
+        //t1.start();
+        train(P,Cmatrix);
+
     }
 
     public int getAvailableProcessors() {
@@ -189,6 +196,10 @@ public class WorkerClass implements Worker {
 
     public String getStatus() {
         return status;
+    }
+
+    public void setStatus(String status){
+        this.status = status;
     }
 
     public void train(RealMatrix P,RealMatrix Cmatrix){
