@@ -22,6 +22,7 @@ public class MasterClass extends Thread implements Master {
 
 
     public void initialize() {
+        System.out.println("Waiting for connections!\n");
 
         try {
             /* Create Server Socket */
@@ -31,10 +32,10 @@ public class MasterClass extends Thread implements Master {
                 /* Accept the connection */
                 connection = providerSocket.accept();
 
-                System.out.println("Got a new connection...");
-
                 /* Handle the request */
                 Thread t1 = new Thread(()->{
+                    System.out.println("Got a new connection...");
+
                     numberOfConnections++;
                     System.out.println("Connection number: " + numberOfConnections);
                     try {
@@ -89,25 +90,38 @@ public class MasterClass extends Thread implements Master {
         }
      //   Object mer = in.readObject();
       //  System.out.println("++" + (String)mer + "++");
-        Object msg = in.readObject();
-     //   System.out.println("***" + (String)msg + "***");
-        StringTokenizer st = new StringTokenizer((String)msg);
-        String first = st.nextToken();
-        while (!first.equals("LOGOUT")){
-            System.out.println(first);
-            msg = in.readObject();
-            st = new StringTokenizer((String)msg);
-            first = st.nextToken();
-        }
-        String kind = st.nextToken();
-        if(kind.equals("USER")) {
-            String un = st.nextToken();
-            Clients.remove(un);
-            clientsNo--;
-            numberOfConnections--;
-            System.out.println("\nUser :  " + name + " just logged out!\n");
-        }
 
+        if(status.equals("user")) {
+            //** reading user query **//
+            Object menuOption = in.readObject();
+            System.out.println("***" + (int) menuOption + "***");
+            if ((int) menuOption < 4) {
+                Object username = in.readObject();
+                Object queryOfPois = in.readObject();
+                System.out.println("***" + "USER : " + (String)username + ", wants " + (int)queryOfPois + " Pois " + "***");
+            }
+            //** end of user query **//
+
+            //** logging out a user **//
+            Object loggingOUTmsg = in.readObject();
+            StringTokenizer st = new StringTokenizer((String) loggingOUTmsg);
+            String first = st.nextToken();
+            while (!first.equals("LOGOUT")) {
+                System.out.println(first);
+                loggingOUTmsg = in.readObject();
+                st = new StringTokenizer((String) loggingOUTmsg);
+                first = st.nextToken();
+            }
+            String kind = st.nextToken();
+            if (kind.equals("USER")) {
+                String un = st.nextToken();
+                Clients.remove(un);
+                clientsNo--;
+                numberOfConnections--;
+                System.out.println("\nUser :  " + name + " just logged out!\n");
+            }
+            //** end of logging out a user **//
+        }
 
     }
 

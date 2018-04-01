@@ -16,6 +16,7 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
     Thread t2 = null;
     public void initializeAndroidClient(){
         /* Create socket for contacting the server on port 4321*/
+
         try {
             requestSocket = new Socket("localhost", 4321);
 
@@ -29,7 +30,7 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
             username = scanner.next();
             out.writeObject(username);
             out.flush();
-            t1 = new Thread(()->{
+  //          t1 = new Thread(()->{
                 try {
                     in = new ObjectInputStream(requestSocket.getInputStream());
                     Object message = in.readObject();
@@ -40,8 +41,8 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            });
-            t1.run();
+   //         });
+   //         t1.run();
           //  listenFromServer(requestSocket);
             menu();
         }  catch (UnknownHostException unknownHost) {
@@ -61,12 +62,12 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
         }
     }
 
-    public void sendNumberOfPois(Integer numOfPois){
+    public void sendNumberOfPois(int numOfPois){
         try {
           //  out = new ObjectOutputStream(requestSocket.getOutputStream());
             out.writeObject(username);
             out.flush();
-            out.writeObject(numOfPois.toString());
+            out.writeObject(numOfPois);
             out.flush();
         }  catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
@@ -81,6 +82,17 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
 //                ioException.printStackTrace();
 //            }
 //        }
+    }
+
+    public void menuOptionSender(int menuOption){
+        try {
+            out.writeObject(menuOption);
+            out.flush();
+        }  catch (UnknownHostException unknownHost) {
+            System.err.println("You are trying to connect to an unknown host!");
+        } catch (Exception ioException) {
+            ioException.printStackTrace();
+        }
     }
 
     public void menu(){
@@ -106,21 +118,25 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
             }
             switch (selection){
                 case 4:
-                    System.exit(0);
+                    menuOptionSender(selection);
+                    return ;
+                 //   System.exit(0);
                 case 1:
-                 //  sendNumberOfPois(5);
+                   menuOptionSender(selection);
+                   sendNumberOfPois(5);
                    return;
                 case 2:
+                    menuOptionSender(selection);
                     sendNumberOfPois(10);
                     return;
                 case 3:
+                    menuOptionSender(selection);
                     sendNumberOfPois(15);
                     return;
                     default:
-                        System.out.println("Please enter a valid selection");
+                        System.out.println("Please enter a valid selection\n");
             }
         }
-
     }
 
   //  public void listenFromServer(Socket connection) {
