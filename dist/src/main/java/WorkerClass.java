@@ -9,8 +9,8 @@ public class WorkerClass implements Worker {
     private long availableMemory;
     private static RealMatrix P;
     private static RealMatrix Cmatrix;
-    private RealMatrix X = MatrixUtils.createRealMatrix(200, 20);
-    private RealMatrix Y = MatrixUtils.createRealMatrix(200, 20);
+    private RealMatrix X;
+    private RealMatrix Y;
     private RealMatrix Cu, Ci;
     private static String status = "worker";
 
@@ -39,6 +39,9 @@ public class WorkerClass implements Worker {
                 out.flush();
                 P = (RealMatrix) in.readObject();
                 Cmatrix = (RealMatrix) in.readObject();
+                X = (RealMatrix) in.readObject();
+                Y = (RealMatrix) in.readObject();
+
             }catch (UnknownHostException unknownHost) {
                 System.err.println("You are trying to connect to an unknown host!");
             } catch (Exception ioException) {
@@ -54,7 +57,7 @@ public class WorkerClass implements Worker {
             }
         //});
         //t1.start();
-        train(P,Cmatrix);
+        train(X,Y);
 
     }
 
@@ -115,11 +118,10 @@ public class WorkerClass implements Worker {
     public RealMatrix calculate_x_u(int user, RealMatrix realMatrixY, RealMatrix realMatrixCu) {
         //TO x_u EINAI GIA KA8E XRHSTH u!!!
         double l = 0.01;
-        System.out.println(P.getRowDimension());
-        RealMatrix Ytranspose = Y.transpose();
+        RealMatrix Ytranspose = realMatrixY.transpose();
         RealMatrix product1 = Ytranspose.multiply(realMatrixCu);
-        RealMatrix product2 = product1.multiply(Y);
-        RealMatrix IdentityMatrix = MatrixUtils.createRealIdentityMatrix(20);//ftiaxnei monadiaio pinaka
+        RealMatrix product2 = product1.multiply(realMatrixY);
+        RealMatrix IdentityMatrix = MatrixUtils.createRealIdentityMatrix(realMatrixY.getColumnDimension());//ftiaxnei monadiaio pinaka
         RealMatrix regularization = IdentityMatrix.scalarMultiply(l);
         RealMatrix inverseTerm = product2.add(regularization);
         RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
@@ -137,10 +139,10 @@ public class WorkerClass implements Worker {
 
     public RealMatrix calculate_y_i(int item, RealMatrix realMatrixX, RealMatrix realMatrixCi) {
         double l = 0.01;
-        RealMatrix Xtranspose = X.transpose();
+        RealMatrix Xtranspose = realMatrixX.transpose();
         RealMatrix product1 = Xtranspose.multiply(realMatrixCi);
-        RealMatrix product2 = product1.multiply(X);
-        RealMatrix IdentityMatrix = MatrixUtils.createRealIdentityMatrix(20);//ftiaxnei monadiaio pinaka
+        RealMatrix product2 = product1.multiply(realMatrixX);
+        RealMatrix IdentityMatrix = MatrixUtils.createRealIdentityMatrix(realMatrixX.getColumnDimension());//ftiaxnei monadiaio pinaka
         RealMatrix regularization = IdentityMatrix.scalarMultiply(l);
         RealMatrix inverseTerm = product2.add(regularization);
         RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
@@ -202,7 +204,7 @@ public class WorkerClass implements Worker {
         this.status = status;
     }
 
-    public void train(RealMatrix P,RealMatrix Cmatrix){
+    public void train(RealMatrix X,RealMatrix Y){
         for (int sweep = 0; sweep < 10; sweep++) {
             //System.out.println("Sweep number: " + sweep);
             //first we will compute all the user factors!!

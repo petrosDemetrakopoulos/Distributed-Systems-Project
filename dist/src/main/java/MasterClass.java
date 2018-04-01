@@ -18,7 +18,7 @@ public class MasterClass extends Thread implements Master,Serializable {
     int numberOfConnections=0;
     int workersNo=0;
     int clientsNo=0;
-    ArrayList<WorkerClass> Workers = new ArrayList<WorkerClass>();//keep number and name of workers    
+    ArrayList<WorkerClass> Workers = new ArrayList<WorkerClass>();//keep number and name of workers
     ArrayList<Object> Clients = new ArrayList<Object>();//keep number and name of clients connected
     Map<Object,Object> sourcesCore = new HashMap<Object, Object>();
     Map<Object,Object> sourcesMemory = new HashMap<Object,Object>();
@@ -96,7 +96,7 @@ public class MasterClass extends Thread implements Master,Serializable {
         Y = MatrixUtils.createRealMatrix(dataset.getColumnDimension(),k);
         Random randomgen = new Random();
 
-        for(int i=0; i<X.getRowDimension(); i++){
+       /* for(int i=0; i<X.getRowDimension(); i++){
             for(int j=0; j<k; j++) {
                 if (Math.random() < 0.5) {
                     X.setEntry(i, j, 0);
@@ -104,15 +104,13 @@ public class MasterClass extends Thread implements Master,Serializable {
                     X.setEntry(i, j, 100 * randomgen.nextDouble());
                 }
             }
-        }
+        }*/
 
         for(int i=0; i<Y.getRowDimension(); i++){
             for(int j=0; j<k; j++) {
-                if (Math.random() < 0.5) {
-                    Y.setEntry(i, j, 0);
-                }else{
-                    Y.setEntry(i, j, 100 * randomgen.nextDouble());
-                }
+
+                    Y.setEntry(i, j, randomgen.nextDouble());
+
             }
         }
 
@@ -134,6 +132,10 @@ public class MasterClass extends Thread implements Master,Serializable {
             out.writeObject(P);
             out.flush();
             out.writeObject(C);
+            out.flush();
+            out.writeObject(X);
+            out.flush();
+            out.writeObject(Y);
             out.flush();
             workersNo++;
             Object gigamem = availableMemory;
