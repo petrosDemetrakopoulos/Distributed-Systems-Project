@@ -18,7 +18,7 @@ public class MasterClass extends Thread implements Master,Serializable {
     int numberOfConnections=0;
     int workersNo=0;
     int clientsNo=0;
-    ArrayList<Object> Workers = new ArrayList<Object>();//keep number and name of workers
+    ArrayList<WorkerClass> Workers = new ArrayList<WorkerClass>();//keep number and name of workers    
     ArrayList<Object> Clients = new ArrayList<Object>();//keep number and name of clients connected
     Map<Object,Object> sourcesCore = new HashMap<Object, Object>();
     Map<Object,Object> sourcesMemory = new HashMap<Object,Object>();
@@ -130,6 +130,7 @@ public class MasterClass extends Thread implements Master,Serializable {
             Object numberOfCores = in.readObject();
             Object availableMemory = in.readObject();
             //Passing pinakes C,P to workers
+            WorkerClass worker = new WorkerClass();
             out.writeObject(P);
             out.flush();
             out.writeObject(C);
@@ -138,7 +139,8 @@ public class MasterClass extends Thread implements Master,Serializable {
             Object gigamem = availableMemory;
             double mem = ((Number) gigamem).doubleValue();
             Object name = "Worker_"+workersNo;
-            Workers.add(name);
+            worker.setStatus((String)name);
+            Workers.add(worker);
             System.out.println(name + " has number of cores: " +numberOfCores+ " and available memory(GB): " + mem/(1024*1024*1024));
             sourcesCore.put(name,numberOfCores);
             sourcesMemory.put(name,availableMemory);
