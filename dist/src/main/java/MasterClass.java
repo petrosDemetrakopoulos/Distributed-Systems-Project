@@ -10,18 +10,19 @@ import java.net.*;
 import java.util.*;
 
 public class MasterClass extends Thread implements Master,Serializable {
-    ObjectInputStream in;
-    ObjectOutputStream out;
-    ServerSocket providerSocket;
-    Socket connection = null;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
+    private ServerSocket providerSocket;
+    private Socket connectionInitial = null;
     private RealMatrix dataset,P,C,X,Y;
-    int numberOfConnections=0;
-    int workersNo=0;
-    int clientsNo=0;
-    ArrayList<Object> Workers = new ArrayList<Object>();//keep number and name of workers
-    ArrayList<Object> Clients = new ArrayList<Object>();//keep number and name of clients connected
-    Map<Object,Object> sourcesCore = new HashMap<Object, Object>();
-    Map<Object,Object> sourcesMemory = new HashMap<Object,Object>();
+    private int numberOfConnections=0;
+    private int workersNo=0;
+    private int clientsNo=0;
+    private ArrayList<Object> Workers = new ArrayList<Object>();//keep number and name of workers
+    private ArrayList<Object> Clients = new ArrayList<Object>();//keep number and name of clients connected
+    private Map<Object,Object> sourcesCore = new HashMap<Object, Object>();
+    private Map<Object,Object> sourcesMemory = new HashMap<Object,Object>();
+    private HashMap<Object,Socket> assingSocketToWorker = new HashMap<>();
 
 
     public void initialize() {
@@ -33,28 +34,27 @@ public class MasterClass extends Thread implements Master,Serializable {
         calculateCMatrix(dataset);
         calculatePMatrix(dataset);
         createXY();
-
         try {
             /* Create Server Socket */
             providerSocket = new ServerSocket(10001, 10);//mexri 10 exyphretei mpainei sto initial buffer
             while (true) {
-
                 /* Accept the connection */
-                connection = providerSocket.accept();
-
+                connectionInitial = providerSocket.accept();
                 System.out.println("Got a new connection...");
-
                 /* Handle the request */
                 Thread t1 = new Thread(()->{
                     numberOfConnections++;
                     System.out.println("Connection number: " + numberOfConnections);
                     try {
-                        requestHandler(connection);
+                        requestHandler(connectionInitial);
                     } catch (IOException | ClassNotFoundException e) {
                         e.printStackTrace();
                     }
                 });
                 t1.start();
+                Rank(sourcesCore);
+                Rank(sourcesMemory);
+                //then we can split the work.
             }
         } catch (IOException ioException) {
             ioException.printStackTrace();
@@ -65,8 +65,7 @@ public class MasterClass extends Thread implements Master,Serializable {
                 ioException.printStackTrace();
             }
         }
-        Rank(sourcesCore);
-        Rank(sourcesMemory);
+
     }
 
     public void calculateCMatrix(RealMatrix realMatrix) {
@@ -96,7 +95,7 @@ public class MasterClass extends Thread implements Master,Serializable {
         Y = MatrixUtils.createRealMatrix(dataset.getColumnDimension(),k);
         Random randomgen = new Random();
 
-        for(int i=0; i<X.getRowDimension(); i++){
+        /*for(int i=0; i<X.getRowDimension(); i++){
             for(int j=0; j<k; j++) {
                 if (Math.random() < 0.5) {
                     X.setEntry(i, j, 0);
@@ -104,15 +103,10 @@ public class MasterClass extends Thread implements Master,Serializable {
                     X.setEntry(i, j, 100 * randomgen.nextDouble());
                 }
             }
-        }
-
+        }*/
         for(int i=0; i<Y.getRowDimension(); i++){
             for(int j=0; j<k; j++) {
-                if (Math.random() < 0.5) {
-                    Y.setEntry(i, j, 0);
-                }else{
-                    Y.setEntry(i, j, 100 * randomgen.nextDouble());
-                }
+                Y.setEntry(i,j,randomgen.nextDouble());
             }
         }
 
@@ -142,7 +136,7 @@ public class MasterClass extends Thread implements Master,Serializable {
             System.out.println(name + " has number of cores: " +numberOfCores+ " and available memory(GB): " + mem/(1024*1024*1024));
             sourcesCore.put(name,numberOfCores);
             sourcesMemory.put(name,availableMemory);
-
+            assingSocketToWorker.put(name,connection);
         }else if(status.equals("client")){
             clientsNo++;
             Object name = "Client_"+clientsNo;
