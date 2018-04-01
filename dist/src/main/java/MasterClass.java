@@ -51,6 +51,7 @@ public class MasterClass extends Thread implements Master,Serializable {
                     try {
                         requestHandler(connection);
                     } catch (IOException | ClassNotFoundException e) {
+                        System.err.println("\nThere is a problem with one connection!!");
                         e.printStackTrace();
                     }
                 });
