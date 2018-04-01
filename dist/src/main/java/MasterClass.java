@@ -8,7 +8,7 @@ import org.apache.commons.math3.util.MathUtils;
 import java.io.*;
 import java.net.*;
 import java.util.*;
-//class master
+
 public class MasterClass extends Thread implements Master,Serializable {
     ObjectInputStream in;
     ObjectOutputStream out;
@@ -18,11 +18,10 @@ public class MasterClass extends Thread implements Master,Serializable {
     int numberOfConnections=0;
     int workersNo=0;
     int clientsNo=0;
-    ArrayList<WorkerClass> Workers = new ArrayList<WorkerClass>();//keep number and name of workers
+    ArrayList<Object> Workers = new ArrayList<Object>();//keep number and name of workers
     ArrayList<Object> Clients = new ArrayList<Object>();//keep number and name of clients connected
     Map<Object,Object> sourcesCore = new HashMap<Object, Object>();
     Map<Object,Object> sourcesMemory = new HashMap<Object,Object>();
-    public static final int MAX_WORKERS = 10;
 
 
     public void initialize() {
@@ -42,6 +41,7 @@ public class MasterClass extends Thread implements Master,Serializable {
 
                 /* Accept the connection */
                 connection = providerSocket.accept();
+
                 System.out.println("Got a new connection...");
 
                 /* Handle the request */
@@ -55,11 +55,6 @@ public class MasterClass extends Thread implements Master,Serializable {
                     }
                 });
                 t1.start();
-
-                if(workersNo>=2){
-                    System.out.print("Cutting table...");
-
-                }
             }
         } catch (IOException ioException) {
             ioException.printStackTrace();
@@ -70,9 +65,6 @@ public class MasterClass extends Thread implements Master,Serializable {
                 ioException.printStackTrace();
             }
         }
-
-
-
         Rank(sourcesCore);
         Rank(sourcesMemory);
     }
@@ -135,7 +127,6 @@ public class MasterClass extends Thread implements Master,Serializable {
         Object status = in.readObject();
         System.out.println("Connected status: " + status);
         if(status.equals("worker")){
-            WorkerClass worker = new WorkerClass();
             Object numberOfCores = in.readObject();
             Object availableMemory = in.readObject();
             //Passing pinakes C,P to workers
@@ -147,8 +138,7 @@ public class MasterClass extends Thread implements Master,Serializable {
             Object gigamem = availableMemory;
             double mem = ((Number) gigamem).doubleValue();
             Object name = "Worker_"+workersNo;
-            worker.setStatus((String)name);
-            Workers.add(worker);
+            Workers.add(name);
             System.out.println(name + " has number of cores: " +numberOfCores+ " and available memory(GB): " + mem/(1024*1024*1024));
             sourcesCore.put(name,numberOfCores);
             sourcesMemory.put(name,availableMemory);
@@ -178,8 +168,12 @@ public class MasterClass extends Thread implements Master,Serializable {
     private static HashMap sortByValues(Map<Object, Object> map) {
         List list = new LinkedList(map.entrySet());
         // Defined Custom Comparator here
-        Collections.sort(list, (Comparator) (o1, o2) -> ((Comparable) ((Map.Entry) (o1)).getValue())
-                .compareTo(((Map.Entry) (o2)).getValue()));
+        Collections.sort(list, new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Comparable) ((Map.Entry) (o1)).getValue())
+                        .compareTo(((Map.Entry) (o2)).getValue());
+            }
+        });
         //Copying the sorted list
         HashMap sortedHashMap = new LinkedHashMap();
         for (Iterator it = list.iterator(); it.hasNext();) {
