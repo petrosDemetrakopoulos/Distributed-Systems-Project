@@ -146,7 +146,8 @@ public class MasterClass extends Thread implements Master,Serializable {
             System.out.println(name + " has number of cores: " +numberOfCores+ " and available memory(GB): " + mem/(1024*1024*1024));
             sourcesCore.put(name,numberOfCores);
             sourcesMemory.put(name,availableMemory);
-
+            out.writeObject("Welcome! " + name);
+            out.flush();
         }else if(status.equals("client")){
             clientsNo++;
             Object name = "Client_"+clientsNo;
