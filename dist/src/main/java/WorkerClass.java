@@ -37,6 +37,9 @@ public class WorkerClass implements Worker {
                 out.flush();
                 out.writeObject(availableMemory);
                 out.flush();
+                Object welcomeMessage = in.readObject();
+                System.out.println(welcomeMessage);
+                
                 P = (RealMatrix) in.readObject();
                 Cmatrix = (RealMatrix) in.readObject();
                 X = (RealMatrix) in.readObject();
