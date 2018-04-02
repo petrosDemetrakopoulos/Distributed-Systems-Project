@@ -1,22 +1,22 @@
 import org.apache.commons.math3.linear.RealMatrix;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 
 public interface Worker {
-    public void initialize();
+    void initialize();
 
-   // public void calculateCMatrix(int i, RealMatrix realMatrix);
+    void calculateCuMatrix(int i, RealMatrix realMatrix);
 
-    //public void calculateCuMatrix(int i, RealMatrix realMatrix);
+    void calculateCiMatrix(int i, RealMatrix realMatrix);
 
-    //public void calculateCiMatrix(int i, RealMatrix realMatrix);
+    RealMatrix preCalculateYY(RealMatrix realMatrix);
 
-    //public RealMatrix preCalculateYY(RealMatrix realMatrix);
+    RealMatrix preCalculateXX(RealMatrix realMatrix);
 
-    //public RealMatrix preCalculateXX(RealMatrix realMatrix);
+    RealMatrix calculate_x_u(int i, RealMatrix realMatrix1, RealMatrix realMatrix2);
 
-    //public RealMatrix calculate_x_u(int i, RealMatrix realMatrix1, RealMatrix realMatrix2);
+    RealMatrix calculate_y_i(int i, RealMatrix realMatrix1, RealMatrix realMatrix2);
 
-    //public RealMatrix calculate_y_i(int i, RealMatrix realMatrix1, RealMatrix realMatrix2);
-
-    //public void sendResultsToMaster();
+    void sendResultsToMaster(ObjectInputStream in, ObjectOutputStream out);
 
 }

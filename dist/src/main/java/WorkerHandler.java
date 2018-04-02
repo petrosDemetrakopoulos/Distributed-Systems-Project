@@ -2,10 +2,10 @@ import org.apache.commons.math3.linear.RealMatrix;
 
 import java.net.*;
 import java.io.*;
+import java.util.HashMap;
 
 
 public class WorkerHandler extends Thread implements Runnable{
-
     private Socket connection;
     private MasterclassNEW server;
     int id = 0;
@@ -13,12 +13,13 @@ public class WorkerHandler extends Thread implements Runnable{
     ObjectInputStream in;
     ObjectOutputStream out;
     boolean shouldRun = true;
+    HashMap<Object,RealMatrix> resultsX = new HashMap<>();
+    HashMap<Object,RealMatrix> resultsY = new HashMap<>();
 
     public WorkerHandler(Socket connection, MasterclassNEW server,int id) {
         try {
             in = new ObjectInputStream(connection.getInputStream());
             out = new ObjectOutputStream(connection.getOutputStream());
-            System.out.println("mphika");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -26,8 +27,6 @@ public class WorkerHandler extends Thread implements Runnable{
         this.server = server;
         this.id = id;
     }
-
-
 
     public void sendData(RealMatrix matrix) throws IOException {
         this.out.writeObject(matrix);
@@ -54,32 +53,44 @@ public class WorkerHandler extends Thread implements Runnable{
         return null;
     }
 
+    public void readResults(){
+        String name;
+        RealMatrix X,Y;
+        try{
+            name = (String) in.readObject();
+            System.out.println("Hi this is worker: " + name + " and i am sending you my results!!");
+            X = (RealMatrix) in.readObject();
+            Y = (RealMatrix) in.readObject();
+            resultsX.put(name,X);
+            resultsY.put(name,Y);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
 
+    public HashMap<Object, RealMatrix> getResultsY() {
+        return resultsY;
+    }
+
+    public HashMap<Object, RealMatrix> getResultsX() {
+        return resultsX;
+    }
 
     @Override
     public void run() {
         System.out.println("Accepted client: " + id);
-        //try {
-
-
-           while(shouldRun){
-               String status = "Status_"+id;
-                /*while(in.available()==0){
-                    try {
-                        Thread.sleep(1);
-
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }*/
-            }
-            //in.close();
-            //out.close();
-        /*} catch (IOException e) {
+        String status = "Worker_"+id;
+        try{
+            this.out.writeObject(status);
+            this.out.flush();
+            System.out.println("Will wait for results!!!");
+        } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Connection probably lost...");
         }
-*/
+        while(shouldRun){
+        }
     }
 
 }

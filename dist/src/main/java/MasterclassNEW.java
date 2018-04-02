@@ -4,6 +4,8 @@ import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.apache.commons.math3.random.RandomAdaptor;
 import org.apache.commons.math3.random.RandomGenerator;
 import org.apache.commons.math3.util.MathUtils;
+
+import java.io.ObjectInputStream;
 import java.util.stream.Stream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -51,6 +53,13 @@ public class MasterclassNEW implements Master,Serializable {
                 memoryRank.put(sc.id,(Long)memory);
                 connections.get(connectionID-1).sendData(P);
                 connections.get(connectionID-1).sendData(C);
+                Thread t1 = new Thread(()->{
+                    boolean haveResults = (boolean) sc.getData();
+                    if(haveResults){
+                        sc.readResults();
+                    }
+                });
+                t1.start();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -70,9 +79,6 @@ public class MasterclassNEW implements Master,Serializable {
         int endY=loadperWorkerY;
         distributeXMatrixToWorkers(startX,endX,loadperWorkerX,loadWorkerModX);
         distributeYMatrixToWorkers(startY,endY,loadperWorkerY,loadWorkerModY);
-
-
-
 
     }
 
@@ -216,15 +222,10 @@ public class MasterclassNEW implements Master,Serializable {
     }
 
     ArrayList<WorkerHandler> setConnections( ArrayList<WorkerHandler> connections){
-       return this.connections = connections;
+        return this.connections = connections;
     }
 
     public static void main(String args[]){
         new MasterclassNEW().initialize();
     }
 }
-
-
-
-
-
