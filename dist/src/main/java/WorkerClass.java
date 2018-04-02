@@ -126,12 +126,12 @@ public class WorkerClass implements Worker {
 
     //diagwnios pinakas diastasewn mxm(osoi einai oi users) pou sthn diagwnio exei tis protimiseis olwn twn users gia to item i
     public void calculateCiMatrix(int item, RealMatrix realMatrix) {
-        System.out.println("dimensions of realmatrix " + realMatrix.getRowDimension() + " " +realMatrix.getColumnDimension());
+        //System.out.println("dimensions of realmatrix " + realMatrix.getRowDimension() + " " +realMatrix.getColumnDimension());
         double[] diag_elements= new double[X.getRowDimension()];
         for(int i=0; i < X.getRowDimension(); i++){
             diag_elements[i] = realMatrix.getEntry(i,item);
         }
-        Cu = MatrixUtils.createRealDiagonalMatrix(diag_elements);
+        Ci = MatrixUtils.createRealDiagonalMatrix(diag_elements);
     }
 
     public RealMatrix calculate_x_u(int user, RealMatrix realMatrixY, RealMatrix realMatrixCu) {
@@ -154,7 +154,6 @@ public class WorkerClass implements Worker {
         //System.out.println(pu.getRowDimension() + " " + pu.getColumnDimension());
         RealMatrix multiplication3 = multiplication2.multiply(pu);
         RealMatrix x_u = Inverse.multiply(multiplication3);
-
         return x_u;
     }
 
@@ -163,8 +162,8 @@ public class WorkerClass implements Worker {
         double l = 0.01;
         double[] pi_data = new double[realMatrixX.getRowDimension()];
         RealMatrix Xtranspose = realMatrixX.transpose();
-        System.out.println("X transpose dimensions: " + Xtranspose.getRowDimension() + " " + Xtranspose.getColumnDimension());
-        System.out.println("ci transpose dimensions: " + realMatrixCi.getRowDimension() + " " + realMatrixCi.getColumnDimension());
+        //System.out.println("X transpose dimensions: " + Xtranspose.getRowDimension() + " " + Xtranspose.getColumnDimension());
+        //System.out.println("ci transpose dimensions: " + realMatrixCi.getRowDimension() + " " + realMatrixCi.getColumnDimension());
         RealMatrix product1 = Xtranspose.multiply(realMatrixCi);
         RealMatrix product2 = product1.multiply(realMatrixX);
         RealMatrix IdentityMatrix = MatrixUtils.createRealIdentityMatrix(realMatrixX.getColumnDimension());//ftiaxnei monadiaio pinaka
@@ -184,45 +183,6 @@ public class WorkerClass implements Worker {
         return y_i;
     }
 
-
-    /*public double calculateError() {
-        double ModelPrediction, RealPrediction, CmatrixPred, MeanSquaredError, Difference, Regularization;
-        double Error = 0.0;
-        double TotalError = 0.0;
-        double l = 0.01;
-        for (int user = 0; user < P.getRowDimension(); user++) {
-            for (int item = 0; item < P.getColumnDimension(); item++) {
-                ModelPrediction = X.getRowMatrix(user).multiply(Y.getRowMatrix(item).transpose()).getEntry(0, 0);
-                RealPrediction = P.getEntry(user, item);
-                CmatrixPred = Cmatrix.getEntry(user, item);
-                Difference = RealPrediction - ModelPrediction;
-                MeanSquaredError = CmatrixPred * Math.pow(Difference, 2);
-                Error = Error + MeanSquaredError;
-            }
-        }
-        Regularization = calculateRegularization();
-        TotalError = TotalError + l * Regularization;
-        return TotalError;
-    }
-
-    public double calculateRegularization() {
-        double TotalNorm;
-        double NormForUser = 0;
-        double NormForItem = 0;
-        for (int user = 0; user < P.getRowDimension(); user++) {
-            NormForUser = NormForUser + Math.pow(X.getRowMatrix(user).getNorm(), 2);
-
-        }
-
-        for (int item = 0; item < P.getColumnDimension(); item++) {
-            NormForItem = NormForItem + Math.pow(Y.getRowMatrix(item).getNorm(), 2);
-        }
-
-        TotalNorm = NormForUser + NormForItem;
-
-        return TotalNorm;
-    }*/
-
     public String getStatus() {
         return status;
     }
@@ -232,10 +192,8 @@ public class WorkerClass implements Worker {
     }
 
     public void train(RealMatrix X,RealMatrix Y){
-        for (int sweep = 0; sweep < 10; sweep++) {
-            //System.out.println("Sweep number: " + sweep);
+        for (int sweep = 0; sweep < 1; sweep++) {
             //first we will compute all the user factors!!
-            //RealMatrix YY = worker.preCalculateYY(Y).copy();//we compute Y^T * Y
             //for each user
             int Xuser=0;
             for (int user = Xstart; user < Xend; user++) {
@@ -244,23 +202,16 @@ public class WorkerClass implements Worker {
                 Xuser++;
                 //System.out.println(Xuser);
             }
+            System.out.println(Xuser);
             //we will compute all the item factors!!
-            //RealMatrix XX = worker.preCalculateXX(X).copy();//we compute X^T * X
             //for each item
             int poi = 0;
             for (int item = Ystart; item < Yend; item++) {
                 calculateCiMatrix(item, Cmatrix);
-                System.out.println(Ci.getRowDimension() + " " + getCi().getColumnDimension());
                 Y.setRowMatrix(poi, calculate_y_i(item, X, getCi()).transpose());
                 poi++;
-
             }
-            /*double error = calculateError();
-            System.out.println("Error : " + error);
-            if (error <= 0.01) {
-                System.out.println("Threshhold reached");
-                break;
-            }*/
+            System.out.println(poi);
         }
     }
 
