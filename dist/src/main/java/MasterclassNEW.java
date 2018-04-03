@@ -17,8 +17,11 @@ import java.util.*;
 public class MasterclassNEW implements Master,Serializable {
     private RealMatrix dataset,P,C,X,Y;
     private ServerSocket socketprovider;
-    private int connectionID =0;
+    private int connectionID = 0;
+    private int clientID = 0;
+    ObjectInputStream in;
     private ArrayList<WorkerHandler> connections = new ArrayList<WorkerHandler>();
+    private ArrayList<String> Clients = new ArrayList<String>();
     private HashMap<Object,Long> memoryRank = new HashMap<Object, Long>();
     private int MAX_WORKERS = 6;
     private int k=100;
@@ -31,6 +34,7 @@ public class MasterclassNEW implements Master,Serializable {
         P = MatrixUtils.createRealMatrix(dataset.getRowDimension(),dataset.getColumnDimension());
         calculateCMatrix(dataset);
         calculatePMatrix(dataset);
+        Socket s;
         createXY();
         System.out.println("Server started...");
         try {
@@ -39,10 +43,13 @@ public class MasterclassNEW implements Master,Serializable {
             e.printStackTrace();
         }
         //while true runs waits for workers/clients to connect
-        while(connectionID<MAX_WORKERS){
+        while(true){
             try {
                 Socket s =  socketprovider.accept();
-                System.out.println("We have a new worker connection...");
+                in = new ObjectInputStream(s.getInputStream());
+                Object kind = in.readObject();
+                if(kind.equals("worker")){
+                    System.out.println("We have a new worker connection...");
                 WorkerHandler sc = new WorkerHandler(s,this,connectionID++);
                 sc.start();
                 connections.add(sc);
@@ -58,12 +65,80 @@ public class MasterclassNEW implements Master,Serializable {
                     if(haveResults){
                         sc.readResults();
                     }
+                    if(resultsX.size()==6 && resultsY.size()==6){
+                        System.out.println("Will reconstruct X,Y and run error calculations!!!");
+                        int Xstart=0;
+                        int Ystart=0;
+                        String name;
+                        for(int i=0; i<MAX_WORKERS; i++){
+                            name = "Worker_"+i;
+                            RealMatrix tempX = resultsX.get(name);
+                            RealMatrix tempY = resultsY.get(name);
+                            //System.out.println(Xstart);
+                            for(int row=0; row<tempX.getRowDimension(); row++){
+                                X.setRowMatrix(Xstart,tempX.getRowMatrix(row));
+                                Xstart++;
+                            }
+                            for(int rowY=0; rowY<tempY.getRowDimension(); rowY++){
+                                Y.setRowMatrix(Ystart,tempY.getRowMatrix(rowY));
+                                Ystart++;
+                            }
+                        }
+                        double error = calculateError();
+                        System.out.println("Error:  "+ error);
+                    }
                 });
                 t1.start();
+                if(connectionID==MAX_WORKERS) {
+                    //Ranking by memory
+                    memoryRank.entrySet().stream()
+                            .sorted(Map.Entry.<Object, Long>comparingByValue().reversed())
+                            .forEach(System.out::println);
+
+                    int loadperWorkerX = X.getRowDimension() / MAX_WORKERS;
+                    int loadperWorkerY = Y.getRowDimension() / MAX_WORKERS;
+                    int loadWorkerModX = X.getRowDimension() % MAX_WORKERS;
+                    int loadWorkerModY = Y.getRowDimension() % MAX_WORKERS;
+                    int startX = 0;
+                    int endX = loadperWorkerX;
+                    int startY = 0;
+                    int endY = loadperWorkerY;
+                    distributeXMatrixToWorkers(startX, endX, loadperWorkerX, loadWorkerModX);
+                    distributeYMatrixToWorkers(startY, endY, loadperWorkerY, loadWorkerModY);
+                }
+
+                } else if(kind.equals("client")){
+                    System.out.println("We have a new client connection...");
+                    ClientHandler sc = new ClientHandler(s,this,connectionID++);
+                    connections.add(sc);
+                    Object name = sc.getData();
+                    sc.sendData("Welcome! " + (String)name);
+                    Clients.add((String)name);
+                    Object message = sc.getData();
+                    StringTokenizer st = new StringTokenizer((String)message);
+                    String first = st.nextToken();
+                    while (!first.equals("LOGOUT")){
+                        System.out.println(first);
+                        message = sc.getData();
+                        st = new StringTokenizer((String)message);
+                        first = st.nextToken();
+                        //here comes the data from client
+                        //either logout message or Stringified number of pois requested -> will be handled later
+                    }
+                    String clKind = st.nextToken();
+                    if(clKind.equals("USER")) {
+                        String un = st.nextToken();
+                        Clients.remove(un);
+                        connectionID--;
+                        System.out.println("\nUser :  " + un + " just logged out!\n");
+                    }
+
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
+
         //Ranking by memory
         memoryRank.entrySet().stream()
                 .sorted(Map.Entry.<Object,Long>comparingByValue().reversed())
