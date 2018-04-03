@@ -19,12 +19,16 @@ public class MasterclassNEW implements Master,Serializable {
     private ServerSocket socketprovider;
     private int connectionID = 0;
     private int clientID = 0;
-    ObjectInputStream in;
+    private ObjectInputStream in;
     private ArrayList<WorkerHandler> connections = new ArrayList<WorkerHandler>();
+    private ArrayList<ClientHandler> clientConnections = new ArrayList<ClientHandler>();
     private ArrayList<String> Clients = new ArrayList<String>();
     private HashMap<Object,Long> memoryRank = new HashMap<Object, Long>();
+
+    private HashMap<Object,RealMatrix> resultsX = new HashMap<Object, RealMatrix>();
+    private HashMap<Object,RealMatrix> resultsY = new HashMap<Object, RealMatrix>();
     private int MAX_WORKERS = 6;
-    private int k=100;
+    private int k = 100;
 
     public void initialize(){
         String fileName = "src/main/java/input_matrix_no_zeros.csv";
@@ -45,9 +49,10 @@ public class MasterclassNEW implements Master,Serializable {
         //while true runs waits for workers/clients to connect
         while(true){
             try {
-                Socket s =  socketprovider.accept();
+                s =  socketprovider.accept();
                 in = new ObjectInputStream(s.getInputStream());
                 Object kind = in.readObject();
+                System.out.println(kind);
                 if(kind.equals("worker")){
                     System.out.println("We have a new worker connection...");
                 WorkerHandler sc = new WorkerHandler(s,this,connectionID++);
@@ -110,7 +115,7 @@ public class MasterclassNEW implements Master,Serializable {
                 } else if(kind.equals("client")){
                     System.out.println("We have a new client connection...");
                     ClientHandler sc = new ClientHandler(s,this,connectionID++);
-                    connections.add(sc);
+                    clientConnections.add(sc);
                     Object name = sc.getData();
                     sc.sendData("Welcome! " + (String)name);
                     Clients.add((String)name);
@@ -134,26 +139,13 @@ public class MasterclassNEW implements Master,Serializable {
                     }
 
                 }
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.printStackTrace();
             }
         }
 
         //Ranking by memory
-        memoryRank.entrySet().stream()
-                .sorted(Map.Entry.<Object,Long>comparingByValue().reversed())
-                .forEach(System.out::println);
 
-        int loadperWorkerX = X.getRowDimension()/MAX_WORKERS;
-        int loadperWorkerY = Y.getRowDimension()/MAX_WORKERS;
-        int loadWorkerModX = X.getRowDimension()%MAX_WORKERS;
-        int loadWorkerModY = Y.getRowDimension()%MAX_WORKERS;
-        int startX = 0;
-        int endX=loadperWorkerX;
-        int startY = 0;
-        int endY=loadperWorkerY;
-        distributeXMatrixToWorkers(startX,endX,loadperWorkerX,loadWorkerModX);
-        distributeYMatrixToWorkers(startY,endY,loadperWorkerY,loadWorkerModY);
 
     }
 
