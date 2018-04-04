@@ -2,27 +2,18 @@ import org.apache.commons.math3.linear.RealMatrix;
 
 import java.net.*;
 import java.io.*;
-import java.util.HashMap;
 
 
 public class WorkerHandler extends Thread implements Runnable{
     private Socket connection;
     private MasterclassNEW server;
     int id = 0;
-    ServerSocket serverSocket = null;
     ObjectInputStream in;
     ObjectOutputStream out;
-    boolean shouldRun = true;
-    HashMap<Object,RealMatrix> resultsX = new HashMap<>();
-    HashMap<Object,RealMatrix> resultsY = new HashMap<>();
 
-    public WorkerHandler(Socket connection, MasterclassNEW server,int id) {
-        try {
-            in = new ObjectInputStream(connection.getInputStream());
-            out = new ObjectOutputStream(connection.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public WorkerHandler(Socket connection, MasterclassNEW server,int id,ObjectInputStream in,ObjectOutputStream out) {
+        this.in = in;
+        this.out = out;
         this.connection = connection;
         this.server = server;
         this.id = id;
@@ -44,7 +35,7 @@ public class WorkerHandler extends Thread implements Runnable{
 
     public Object getData(){
         try {
-            return in.readObject();
+            return this.in.readObject();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
@@ -57,12 +48,12 @@ public class WorkerHandler extends Thread implements Runnable{
         String name;
         RealMatrix X,Y;
         try{
-            name = (String) in.readObject();
+            name = (String) this.in.readObject();
             System.out.println("Hi this is worker: " + name + " and i am sending you my results!!");
-            X = (RealMatrix) in.readObject();
-            Y = (RealMatrix) in.readObject();
-            resultsX.put(name,X);
-            resultsY.put(name,Y);
+            X = (RealMatrix) this.in.readObject();
+            Y = (RealMatrix) this.in.readObject();
+            server.setResultsX(name,X);
+            server.setResultsY(name,Y);
         } catch (IOException e) {
             e.printStackTrace();
         } catch (ClassNotFoundException e) {
@@ -70,13 +61,6 @@ public class WorkerHandler extends Thread implements Runnable{
         }
     }
 
-    public HashMap<Object, RealMatrix> getResultsY() {
-        return resultsY;
-    }
-
-    public HashMap<Object, RealMatrix> getResultsX() {
-        return resultsX;
-    }
 
     @Override
     public void run() {
@@ -89,8 +73,10 @@ public class WorkerHandler extends Thread implements Runnable{
         } catch (IOException e) {
             e.printStackTrace();
         }
-        while(shouldRun){
+        try {
+            this.connection.setKeepAlive(true);
+        } catch (SocketException e) {
+            e.printStackTrace();
         }
     }
-
 }

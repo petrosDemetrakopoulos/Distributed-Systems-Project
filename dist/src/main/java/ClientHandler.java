@@ -16,13 +16,9 @@ public class ClientHandler extends Thread implements Runnable{
 
 
 
-    public ClientHandler(Socket connection, MasterclassNEW server,int id) {
-        try {
-            in = new ObjectInputStream(connection.getInputStream());
-            out = new ObjectOutputStream(connection.getOutputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    public ClientHandler(Socket connection, MasterclassNEW server,int id, ObjectInputStream in,ObjectOutputStream out) {
+        this.in = in;
+        this.out = out;
         this.connection = connection;
         this.server = server;
         this.id = id;

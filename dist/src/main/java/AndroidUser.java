@@ -17,7 +17,7 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
     public void initializeAndroidClient(){
         /* Create socket for contacting the server on port 4321*/
         try {
-            requestSocket = new Socket("localhost", 1001);
+            requestSocket = new Socket("localhost", 10001);
 
             /* Create the streams to send and receive data from server */
             out = new ObjectOutputStream(requestSocket.getOutputStream());
@@ -33,10 +33,10 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
                 try {
                     in = new ObjectInputStream(requestSocket.getInputStream());
                     Object message = in.readObject();
-                    StringTokenizer tokenizer = new StringTokenizer((String)message);
+                    System.out.println(message);
+                    StringTokenizer tokenizer = new StringTokenizer((String)message,"_ ");
                     tokenizer.nextToken();
                     clientNo = tokenizer.nextToken();
-                    System.out.println(message);
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
