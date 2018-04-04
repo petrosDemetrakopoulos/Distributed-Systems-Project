@@ -4,7 +4,7 @@ import org.apache.commons.math3.linear.*;
 import java.io.*;
 import java.net.*;
 
-public class WorkerClass implements Worker {
+public class WorkerClass implements Worker{
     private int availableProcessors;
     private long availableMemory;
     private static RealMatrix P;
@@ -13,7 +13,9 @@ public class WorkerClass implements Worker {
     private RealMatrix Y;
     private RealMatrix Cu, Ci;
     private static String status;
+    private static String type = "worker";
     private int Xstart,Xend,Ystart,Yend;
+
     public WorkerClass(String status){
         this.status=status;
     }
@@ -21,7 +23,7 @@ public class WorkerClass implements Worker {
     public WorkerClass(){}
 
     public void initialize() {
-        Socket requestSocket = null;
+        Socket requestSocket;
         ObjectInputStream in = null;
         ObjectOutputStream out = null;
         availableProcessors = Runtime.getRuntime().availableProcessors();
@@ -30,24 +32,25 @@ public class WorkerClass implements Worker {
             requestSocket = new Socket("localhost",10001);
             out = new ObjectOutputStream(requestSocket.getOutputStream());
             in = new ObjectInputStream(requestSocket.getInputStream());
-            System.out.println(out);
-            out.writeObject("worker");
+            out.writeObject(type);
             out.flush();
             out.writeObject(availableProcessors);
             out.flush();
             out.writeObject(availableMemory);
             out.flush();
-            status = (String)in.readObject();
+            status = (String) in.readObject();
             System.out.println("Worker status: " + status);
             P = (RealMatrix) in.readObject();
             Cmatrix = (RealMatrix) in.readObject();
             System.out.println("Waiting for work");
             X = (RealMatrix) in.readObject();
-            Xstart = (int) in.readObject();
-            Xend = (int) in.readObject();
+            Xstart = in.readInt();
+            Xend = in.readInt();
+            System.out.println("Xstart : " + Xstart + " Xend : " + Xend);
             Y = (RealMatrix) in.readObject();
-            Ystart = (int) in.readObject();
-            Yend = (int) in.readObject();
+            Ystart = in.readInt();
+            Yend = in.readInt();
+            System.out.println("Ystart : " + Ystart + " Yend : " + Yend);
             System.out.println("Starting calculations of X and Y");
         }catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
@@ -57,6 +60,35 @@ public class WorkerClass implements Worker {
         train(X,Y);
         System.out.println("Calculations done...sending results to master!!!");
         sendResultsToMaster(in,out);
+        System.out.println("Waiting for new work... :(");
+        int haveWork;
+        boolean epochs;
+        try {
+            haveWork = (int) in.readObject();
+            epochs = (boolean) in.readObject();
+            while(haveWork==1 && epochs){
+                X = (RealMatrix) in.readObject();
+                Xstart = in.readInt();
+                Xend = in.readInt();
+                System.out.println("Xstart : " + Xstart + " Xend : " + Xend);
+                Y = (RealMatrix) in.readObject();
+                Ystart = in.readInt();
+                Yend = in.readInt();
+                System.out.println("Ystart : " + Ystart + " Yend : " + Yend);
+                System.out.println("Starting calculations of X and Y");
+                train(X,Y);
+                sendResultsToMaster(in,out);
+                System.out.println("Waiting for new work... :(");
+                haveWork = (int) in.readObject();
+                epochs = (boolean) in.readObject();
+                System.out.println(epochs);
+            }
+            System.out.println("Training done!!!");
+            out.close();
+            in.close();
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     public int getAvailableProcessors() {
@@ -176,29 +208,27 @@ public class WorkerClass implements Worker {
     }
 
     public void train(RealMatrix X,RealMatrix Y){
-        for (int sweep = 0; sweep < 1; sweep++) {
-            //first we will compute all the user factors!!
-            //for each user
-            int Xuser=0;
-            for (int user = Xstart; user < Xend; user++) {
-                calculateCuMatrix(user, Cmatrix);
-                X.setRowMatrix(Xuser, calculate_x_u(user, Y, getCu()).transpose());
-                Xuser++;
-            }
-            //we will compute all the item factors!!
-            //for each item
-            int poi = 0;
-            for (int item = Ystart; item < Yend; item++) {
-                calculateCiMatrix(item, Cmatrix);
-                Y.setRowMatrix(poi, calculate_y_i(item, X, getCi()).transpose());
-                poi++;
-            }
+        //first we will compute all the user factors!!
+        //for each user
+        int Xuser=0;
+        for (int user = Xstart; user < Xend; user++) {
+            calculateCuMatrix(user, Cmatrix);
+            X.setRowMatrix(Xuser, calculate_x_u(user, Y, getCu()).transpose());
+            Xuser++;
+        }
+        //we will compute all the item factors!!
+        //for each item
+        int poi = 0;
+        for (int item = Ystart; item < Yend; item++) {
+            calculateCiMatrix(item, Cmatrix);
+            Y.setRowMatrix(poi, calculate_y_i(item, X, getCi()).transpose());
+            poi++;
         }
     }
 
     public void sendResultsToMaster(ObjectInputStream in,ObjectOutputStream out){
         try{
-            boolean haveResults = true;
+            Object haveResults = true;
             out.writeObject(haveResults);
             out.flush();
             out.writeObject(status);
@@ -206,16 +236,11 @@ public class WorkerClass implements Worker {
             out.writeObject(X);
             out.flush();
             out.writeObject(Y);
+            out.flush();
+            System.out.println("Sending is done!!!");
         } catch (IOException e) {
             e.printStackTrace();
-        }/*finally {
-            try {
-                in.close();
-                out.close();
-            } catch (IOException ioException) {
-                ioException.printStackTrace();
-            }
-        }*/
+        }
     }
 
 
