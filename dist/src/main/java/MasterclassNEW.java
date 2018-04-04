@@ -62,12 +62,11 @@ public class MasterclassNEW implements Master {
                 connections.get(connectionID-1).sendData(P);
                 connections.get(connectionID-1).sendData(C);
                 if(connectionID==MAX_WORKERS){
-                    //int counter = MAX_WORKERS;
                     double error = 0.0;
                     double NewError,TotalError;
                     int haveWork;
                     Object epochs;
-                    for(int epoch=0; epoch<2; epoch++) {
+                    for(int epoch=0; epoch<30; epoch++) {
                         sendWork();
                         for (int i = 0; i < MAX_WORKERS; i++) {
                             int finalI = i;
