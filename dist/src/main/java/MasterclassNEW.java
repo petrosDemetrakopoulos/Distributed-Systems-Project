@@ -19,6 +19,8 @@ public class MasterclassNEW implements Master {
     private ServerSocket socketprovider;
     private int connectionID = 0;
     private ArrayList<WorkerHandler> connections = new ArrayList<WorkerHandler>();
+    private ArrayList<ClientHandler> clientConnections = new ArrayList<ClientHandler>();
+    private ArrayList<String> Clients = new ArrayList<String>();
     private HashMap<Object,Long> memoryRank = new HashMap<Object, Long>();
     private int MAX_WORKERS = 6;
     private int k=100;
@@ -50,6 +52,7 @@ public class MasterclassNEW implements Master {
                 out = new ObjectOutputStream(s.getOutputStream());
                 Object type = in.readObject();
                 System.out.println(type);
+                if (type.equals("worker")) {
                 System.out.println("We have a new worker connection...");
                 WorkerHandler sc = new WorkerHandler(s,this,connectionID++,in ,out);
                 sc.start();
@@ -137,6 +140,14 @@ public class MasterclassNEW implements Master {
                     } catch (IOException e){
                         e.printStackTrace();
                     }
+                }
+                } else if(type.equals("user")){
+                    System.out.println("We have a new client connection...");
+                    ClientHandler sc = new ClientHandler(s,this,connectionID++, in, out);
+                    clientConnections.add(sc);
+                    Object name = sc.getData();
+                    sc.sendData("Welcome! " + (String)name);
+                    Clients.add((String)name);
                 }
             } catch (IOException | InterruptedException | ClassNotFoundException e){
                 e.printStackTrace();
