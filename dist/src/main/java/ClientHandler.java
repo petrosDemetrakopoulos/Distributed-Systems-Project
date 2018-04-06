@@ -12,9 +12,6 @@ public class ClientHandler extends Thread implements Runnable{
     ServerSocket serverSocket = null;
     ObjectInputStream in;
     ObjectOutputStream out;
-    boolean shouldRun = true;
-
-
 
     public ClientHandler(Socket connection, MasterclassNEW server,int id, ObjectInputStream in,ObjectOutputStream out) {
         this.in = in;
@@ -29,7 +26,6 @@ public class ClientHandler extends Thread implements Runnable{
         this.out.flush();
     }
 
-
     public Object getData(){
         try {
             return this.in.readObject();
@@ -41,8 +37,6 @@ public class ClientHandler extends Thread implements Runnable{
         return null;
     }
 
-
-
     @Override
     public void run() {
         System.out.println("Accepted android client: " + id);
@@ -53,8 +47,10 @@ public class ClientHandler extends Thread implements Runnable{
         } catch (IOException e) {
             e.printStackTrace();
         }
-        while(shouldRun){
+        try {
+            this.connection.setKeepAlive(true);
+        } catch (SocketException e) {
+            e.printStackTrace();
         }
     }
-
 }

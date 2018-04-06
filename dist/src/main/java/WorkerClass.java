@@ -11,7 +11,6 @@ public class WorkerClass implements Worker{
     private static RealMatrix Cmatrix;
     private RealMatrix X;
     private RealMatrix Y;
-    private RealMatrix Cu, Ci;
     private static String status;
     private static String type = "worker";
     private int Xstart,Xend,Ystart,Yend;
@@ -23,7 +22,7 @@ public class WorkerClass implements Worker{
     public WorkerClass(){}
 
     public void initialize() {
-        Socket requestSocket;
+        Socket requestSocket = null;
         ObjectInputStream in = null;
         ObjectOutputStream out = null;
         availableProcessors = Runtime.getRuntime().availableProcessors();
@@ -42,52 +41,87 @@ public class WorkerClass implements Worker{
             System.out.println("Worker status: " + status);
             P = (RealMatrix) in.readObject();
             Cmatrix = (RealMatrix) in.readObject();
-            System.out.println("Waiting for work");
-            X = (RealMatrix) in.readObject();
+
+            //FOR Xslice
+            System.out.println("Waiting for Xslice...");
+            Y = (RealMatrix) in.readObject();
+            RealMatrix Xslice = (RealMatrix) in.readObject();
             Xstart = in.readInt();
             Xend = in.readInt();
             System.out.println("Xstart : " + Xstart + " Xend : " + Xend);
-            Y = (RealMatrix) in.readObject();
+            System.out.println("Starting calculations for Xslice...");
+            trainX(Xslice,Y);
+            System.out.println("Calculations done for Xslice...sending results to master!!!");
+            sendResultsToMasterForX(in,out,Xslice);
+
+            //FOR Yslice
+            System.out.println("Waiting for Yslice...");
+            X = (RealMatrix) in.readObject();
+            RealMatrix Yslice = (RealMatrix) in.readObject();
             Ystart = in.readInt();
             Yend = in.readInt();
             System.out.println("Ystart : " + Ystart + " Yend : " + Yend);
-            System.out.println("Starting calculations of X and Y");
+            System.out.println("Starting calculations for Yslice...");
+            trainY(Yslice,X);
+            System.out.println("Calculations done for Yslice...sending results to master!!!");
+            sendResultsToMasterForY(in,out,Yslice);
+
         }catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
         } catch (Exception ioException) {
             ioException.printStackTrace();
         }
-        train(X,Y);
-        System.out.println("Calculations done...sending results to master!!!");
-        sendResultsToMaster(in,out);
+
+
         System.out.println("Waiting for new work... :(");
         int haveWork;
-        boolean epochs;
         try {
-            haveWork = (int) in.readObject();
-            epochs = (boolean) in.readObject();
-            while(haveWork==1 && epochs){
-                X = (RealMatrix) in.readObject();
-                Xstart = in.readInt();
-                Xend = in.readInt();
-                System.out.println("Xstart : " + Xstart + " Xend : " + Xend);
-                Y = (RealMatrix) in.readObject();
-                Ystart = in.readInt();
-                Yend = in.readInt();
-                System.out.println("Ystart : " + Ystart + " Yend : " + Yend);
-                System.out.println("Starting calculations of X and Y");
-                train(X,Y);
-                sendResultsToMaster(in,out);
-                System.out.println("Waiting for new work... :(");
+            while(true){
                 haveWork = (int) in.readObject();
-                epochs = (boolean) in.readObject();
-                System.out.println(epochs);
+                if(haveWork==1){
+
+                    //FOR Xslice
+                    System.out.println("Waiting for Xslice...");
+                    Y = (RealMatrix) in.readObject();
+                    RealMatrix Xslice = (RealMatrix) in.readObject();
+                    Xstart = in.readInt();
+                    Xend = in.readInt();
+                    System.out.println("Xstart : " + Xstart + " Xend : " + Xend);
+                    System.out.println("Starting calculations for Xslice...");
+                    trainX(Xslice,Y);
+                    System.out.println("Calculations done for Xslice...sending results to master!!!");
+                    sendResultsToMasterForX(in,out,Xslice);
+
+                    //FOR Yslice
+                    System.out.println("Waiting for Yslice...");
+                    X = (RealMatrix) in.readObject();
+                    RealMatrix Yslice = (RealMatrix) in.readObject();
+                    Ystart = in.readInt();
+                    Yend = in.readInt();
+                    System.out.println("Ystart : " + Ystart + " Yend : " + Yend);
+                    System.out.println("Starting calculations for Yslice...");
+                    trainY(Yslice,X);
+                    System.out.println("Calculations done for Yslice...sending results to master!!!");
+                    sendResultsToMasterForY(in,out,Yslice);
+                    System.out.println("Waiting for new work... :(");
+                }else{
+                    break;
+                }
             }
-            System.out.println("Training done!!!");
-            out.close();
-            in.close();
-        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Training is done!!!");
+        } catch (IOException | ClassCastException e) {
+            System.out.println("Epochs are over...Training is done!!!");
+        }catch (ClassNotFoundException e){
             e.printStackTrace();
+        }finally {
+            try {
+                System.out.println("Closing communication...Bye!!");
+                in.close();
+                out.close();
+                requestSocket.close();
+            }catch(IOException e1){
+                e1.printStackTrace();
+            }
         }
     }
 
@@ -99,14 +133,6 @@ public class WorkerClass implements Worker{
         return this.availableMemory;
     }
 
-    public RealMatrix getCu() {
-        return Cu;
-    }
-
-    public RealMatrix getCi() {
-        return Ci;
-    }
-
     public RealMatrix getP() {
         return P;
     }
@@ -116,11 +142,11 @@ public class WorkerClass implements Worker{
     }
 
     public RealMatrix getX() {
-        return X;
+       return X;
     }
 
     public RealMatrix getY() {
-        return Y;
+       return Y;
     }
 
     public RealMatrix preCalculateXX(RealMatrix realMatrix) {
@@ -134,68 +160,58 @@ public class WorkerClass implements Worker{
     }
 
     //diagwnios pinakas diastasewn nxn (osa einai ta items) pou sthn diagwnio exei tis protimiseis tou xrhsth u
-    public void calculateCuMatrix(int user, RealMatrix realMatrix) {
-        double[] diag_elements= new double[Y.getRowDimension()];
-        for(int i=0; i < Y.getRowDimension(); i++){
-            diag_elements[i] = realMatrix.getEntry(user,i);
-        }
-        Cu = MatrixUtils.createRealDiagonalMatrix(diag_elements);
+    public RealMatrix calculateCuMatrix(int user, RealMatrix realMatrix) {
+        double[] diag_elements = realMatrix.getRow(user);
+        RealMatrix Cu = MatrixUtils.createRealDiagonalMatrix(diag_elements);
+        return Cu;
     }
 
     //diagwnios pinakas diastasewn mxm(osoi einai oi users) pou sthn diagwnio exei tis protimiseis olwn twn users gia to item i
-    public void calculateCiMatrix(int item, RealMatrix realMatrix) {
-        //System.out.println("dimensions of realmatrix " + realMatrix.getRowDimension() + " " +realMatrix.getColumnDimension());
-        double[] diag_elements= new double[X.getRowDimension()];
-        for(int i=0; i < X.getRowDimension(); i++){
-            diag_elements[i] = realMatrix.getEntry(i,item);
-        }
-        Ci = MatrixUtils.createRealDiagonalMatrix(diag_elements);
+    public RealMatrix calculateCiMatrix(int item, RealMatrix realMatrix) {
+        double[] diag_elements= realMatrix.getColumn(item);
+        RealMatrix Ci = MatrixUtils.createRealDiagonalMatrix(diag_elements);
+        return Ci;
     }
 
-    public RealMatrix calculate_x_u(int user, RealMatrix realMatrixY, RealMatrix realMatrixCu) {
+    public RealMatrix calculate_x_u(int user, RealMatrix realMatrixY, RealMatrix YtY) {
         //TO x_u EINAI GIA KA8E XRHSTH u!!!
         double l = 0.01;
-        double[] pu_data = new double[realMatrixY.getRowDimension()];
+        RealMatrix realMatrixCu = calculateCuMatrix(user,Cmatrix);
         RealMatrix Ytranspose = realMatrixY.transpose();
-        RealMatrix product1 = Ytranspose.multiply(realMatrixCu);
-        RealMatrix product2 = product1.multiply(realMatrixY);
+        RealMatrix IdentityMatrix1 = MatrixUtils.createRealIdentityMatrix(realMatrixCu.getColumnDimension());
+        RealMatrix subtract = realMatrixCu.subtract(IdentityMatrix1);
+        RealMatrix product = Ytranspose.multiply(subtract);
+        RealMatrix product1 = product.multiply(realMatrixY);
         RealMatrix IdentityMatrix = MatrixUtils.createRealIdentityMatrix(realMatrixY.getColumnDimension());//ftiaxnei monadiaio pinaka
+        RealMatrix addition1 = YtY.add(product1);
         RealMatrix regularization = IdentityMatrix.scalarMultiply(l);
-        RealMatrix inverseTerm = product2.add(regularization);
+        RealMatrix inverseTerm = addition1.add(regularization);
         RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
         RealMatrix multiplication2 = Ytranspose.multiply(realMatrixCu);
-        for(int i=0; i<realMatrixY.getRowDimension(); i++){
-            pu_data[i] = P.getEntry(user,i);
-        }
-        RealMatrix pu = MatrixUtils.createColumnRealMatrix(pu_data);//ftiaxnei to p(u)
+        RealMatrix pu = MatrixUtils.createColumnRealMatrix(P.getRow(user));//ftiaxnei to p(u)
         RealMatrix multiplication3 = multiplication2.multiply(pu);
         RealMatrix x_u = Inverse.multiply(multiplication3);
         return x_u;
     }
 
 
-    public RealMatrix calculate_y_i(int item, RealMatrix realMatrixX, RealMatrix realMatrixCi) {
+    public RealMatrix calculate_y_i(int item, RealMatrix realMatrixX, RealMatrix XtX) {
         double l = 0.01;
-        double[] pi_data = new double[realMatrixX.getRowDimension()];
+        RealMatrix realMatrixCi = calculateCiMatrix(item,Cmatrix);
         RealMatrix Xtranspose = realMatrixX.transpose();
-        //System.out.println("X transpose dimensions: " + Xtranspose.getRowDimension() + " " + Xtranspose.getColumnDimension());
-        //System.out.println("ci transpose dimensions: " + realMatrixCi.getRowDimension() + " " + realMatrixCi.getColumnDimension());
-        RealMatrix product1 = Xtranspose.multiply(realMatrixCi);
-        RealMatrix product2 = product1.multiply(realMatrixX);
+        RealMatrix IdentityMatrix1 = MatrixUtils.createRealIdentityMatrix(realMatrixCi.getColumnDimension());
+        RealMatrix subtract = realMatrixCi.subtract(IdentityMatrix1);
+        RealMatrix product = Xtranspose.multiply(subtract);
+        RealMatrix product1 = product.multiply(realMatrixX);
         RealMatrix IdentityMatrix = MatrixUtils.createRealIdentityMatrix(realMatrixX.getColumnDimension());//ftiaxnei monadiaio pinaka
+        RealMatrix addition1 = XtX.add(product1);
         RealMatrix regularization = IdentityMatrix.scalarMultiply(l);
-        RealMatrix inverseTerm = product2.add(regularization);
+        RealMatrix inverseTerm = addition1.add(regularization);
         RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
-        //System.out.println(Inverse.getRowDimension() + " " + Inverse.getColumnDimension());
         RealMatrix multiplication2 = Xtranspose.multiply(realMatrixCi);
-        for(int i=0; i<realMatrixX.getRowDimension(); i++){
-            pi_data[i] = P.getEntry(i,item);
-        }
-        RealMatrix pi = MatrixUtils.createColumnRealMatrix(pi_data);//ftiaxnei to p(u)
-        //System.out.println(pu.getRowDimension() + " " + pu.getColumnDimension());
+        RealMatrix pi = MatrixUtils.createColumnRealMatrix(P.getColumn(item));//ftiaxnei to p(u)
         RealMatrix multiplication3 = multiplication2.multiply(pi);
         RealMatrix y_i = Inverse.multiply(multiplication3);
-
         return y_i;
     }
 
@@ -207,35 +223,36 @@ public class WorkerClass implements Worker{
         this.status = status;
     }
 
-    public void train(RealMatrix X,RealMatrix Y){
+    public void trainX(RealMatrix Xslice,RealMatrix Y){
         //first we will compute all the user factors!!
         //for each user
+        RealMatrix YtY = preCalculateYY(Y);
         int Xuser=0;
         for (int user = Xstart; user < Xend; user++) {
-            calculateCuMatrix(user, Cmatrix);
-            X.setRowMatrix(Xuser, calculate_x_u(user, Y, getCu()).transpose());
+            Xslice.setRowMatrix(Xuser, calculate_x_u(user, Y, YtY).transpose());
             Xuser++;
         }
+    }
+
+    public void trainY(RealMatrix Yslice,RealMatrix X){
         //we will compute all the item factors!!
         //for each item
+        RealMatrix XtX = preCalculateXX(X);
         int poi = 0;
         for (int item = Ystart; item < Yend; item++) {
-            calculateCiMatrix(item, Cmatrix);
-            Y.setRowMatrix(poi, calculate_y_i(item, X, getCi()).transpose());
+            Yslice.setRowMatrix(poi, calculate_y_i(item, X, XtX).transpose());
             poi++;
         }
     }
 
-    public void sendResultsToMaster(ObjectInputStream in,ObjectOutputStream out){
+    public void sendResultsToMasterForX(ObjectInputStream in,ObjectOutputStream out,RealMatrix Xslice){
         try{
             Object haveResults = true;
             out.writeObject(haveResults);
             out.flush();
             out.writeObject(status);
             out.flush();
-            out.writeObject(X);
-            out.flush();
-            out.writeObject(Y);
+            out.writeObject(Xslice.copy());
             out.flush();
             System.out.println("Sending is done!!!");
         } catch (IOException e) {
@@ -243,6 +260,20 @@ public class WorkerClass implements Worker{
         }
     }
 
+    public void sendResultsToMasterForY(ObjectInputStream in,ObjectOutputStream out,RealMatrix Yslice){
+        try{
+            Object haveResults = true;
+            out.writeObject(haveResults);
+            out.flush();
+            out.writeObject(status);
+            out.flush();
+            out.writeObject(Yslice.copy());
+            out.flush();
+            System.out.println("Sending is done!!!");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     public static void main(String args[]) {
         new WorkerClass().initialize();
