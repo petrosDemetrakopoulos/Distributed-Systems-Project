@@ -18,12 +18,13 @@ public class MasterclassNEW implements Master {
     private RealMatrix dataset,P,C,X,Y;
     private ServerSocket socketprovider;
     private int connectionID = 0;
+    private int clientConnectionID = 0;
     private ArrayList<WorkerHandler> connections = new ArrayList<WorkerHandler>();
     private ArrayList<ClientHandler> clientConnections = new ArrayList<ClientHandler>();
     private ArrayList<String> Clients = new ArrayList<String>();
     private HashMap<Object,Long> memoryRank = new HashMap<Object, Long>();
-    private int MAX_WORKERS = 3;
-    private int k=100;
+    private int MAX_WORKERS = 6;
+    private int k = 20;
     private HashMap<Object,RealMatrix> resultsX = new HashMap<>();
     private HashMap<Object,RealMatrix> resultsY = new HashMap<>();
     private ObjectInputStream in;
@@ -168,16 +169,69 @@ public class MasterclassNEW implements Master {
                     }
                 }else if(type.equals("user")){
                     System.out.println("We have a new client connection...");
-                    ClientHandler sc = new ClientHandler(s,this,connectionID++, in, out);
+                    ClientHandler sc = new ClientHandler(s,this,clientConnectionID++, in, out);
+                    int crnUserID = clientConnectionID;
                     clientConnections.add(sc);
                     Object name = sc.getData();
                     sc.sendData("Welcome! " + (String)name);
                     Clients.add((String)name);
+                    Object numOfPois = sc.getData();
+                    String stringifiedNumOfPois = (String)numOfPois;
+                    ArrayList<Double> scoresForPois = new ArrayList<>();
+                    ArrayList<Integer> poisIds = new ArrayList<>();
+                    HashMap<Integer, Double> hmap = new HashMap<Integer, Double>();
+                    for(int i=0; i<Y.getRowDimension(); i++){ //for each poi
+                        double crnRes = calculateScore(crnUserID, i);
+                        hmap.put(i,crnRes);
+                    }
+                    Map<Integer, Double> map = sortByValues(hmap);
+                    System.out.println("After Sorting:");
+                    Set set2 = map.entrySet();
+                    Iterator iterator2 = set2.iterator();
+                    while(iterator2.hasNext()) {
+                        Map.Entry me2 = (Map.Entry)iterator2.next();
+                        System.out.print(me2.getKey() + ": ");
+                        System.out.println(me2.getValue());
+                    }
+                    iterator2 = set2.iterator();
+                    HashMap<Integer, Double> results = new HashMap<Integer, Double>();
+                    Integer count = 0;
+                    while(iterator2.hasNext()) {
+                        if(count < Integer.parseInt(stringifiedNumOfPois)){
+                            Map.Entry me2 = (Map.Entry)iterator2.next();
+                            results.put((Integer)me2.getKey(),(Double)me2.getValue());
+                            System.out.print(me2.getKey() + ": ");
+                            System.out.println(me2.getValue());
+                            count++;
+                        } else {
+                            break;
+                        }
+                    }
+                    sc.sendData(results);
                 }
             } catch (IOException | InterruptedException | ClassNotFoundException e){
                 e.printStackTrace();
             }
         }
+    }
+    private static HashMap sortByValues(HashMap map) {
+        List list = new LinkedList(map.entrySet());
+        // Defined Custom Comparator here
+        Collections.sort(list, new Comparator() {
+            public int compare(Object o1, Object o2) {
+                return ((Comparable) ((Map.Entry) (o2)).getValue())
+                        .compareTo(((Map.Entry) (o1)).getValue());
+            }
+        });
+
+        // Here I am copying the sorted list in HashMap
+        // using LinkedHashMap to preserve the insertion order
+        HashMap sortedHashMap = new LinkedHashMap();
+        for (Iterator it = list.iterator(); it.hasNext();) {
+            Map.Entry entry = (Map.Entry) it.next();
+            sortedHashMap.put(entry.getKey(), entry.getValue());
+        }
+        return sortedHashMap;
     }
 
     public void setResultsX(Object name,RealMatrix temp){
@@ -340,6 +394,13 @@ public class MasterclassNEW implements Master {
         Regularization = calculateRegularization();
         TotalError = TotalError + l * Regularization;
         return TotalError;
+    }
+
+    public double calculateScore(int user, int poi) {
+        RealMatrix y_i = Y.getRowMatrix(poi);
+        RealMatrix x_u = X.getRowMatrix(user);
+        double p_u_i = x_u.multiply(y_i.transpose()).getEntry(0,0);
+        return p_u_i;
     }
 
     public double calculateRegularization() {

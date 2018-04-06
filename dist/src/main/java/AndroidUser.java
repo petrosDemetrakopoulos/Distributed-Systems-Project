@@ -3,8 +3,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.Scanner;
-import java.util.StringTokenizer;
+import java.util.*;
 
 public class AndroidUser extends Thread implements AndroidClient, Runnable {
     String username = "";
@@ -63,10 +62,19 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
     public void sendNumberOfPois(Integer numOfPois){
         try {
           //  out = new ObjectOutputStream(requestSocket.getOutputStream());
-            out.writeObject(username);
-            out.flush();
+           // out.writeObject(username);
+           // out.flush();
             out.writeObject(numOfPois.toString());
             out.flush();
+            Object res = in.readObject();
+            HashMap<Integer, Double> results = (HashMap<Integer, Double>)res;
+            Iterator it = results.entrySet().iterator();
+            while (it.hasNext()){
+                Map.Entry me2 = (Map.Entry)it.next();
+                System.out.print(me2.getKey() + ": ");
+                System.out.println(me2.getValue());
+            }
+
         }  catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
         } catch (Exception ioException) {
@@ -107,7 +115,7 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
                 case 4:
                     System.exit(0);
                 case 1:
-                 //  sendNumberOfPois(5);
+                   sendNumberOfPois(5);
                    return;
                 case 2:
                     sendNumberOfPois(10);
