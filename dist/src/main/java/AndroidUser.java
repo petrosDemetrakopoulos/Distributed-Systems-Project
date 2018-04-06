@@ -15,7 +15,6 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
     Thread t1 = null;
     Thread t2 = null;
     public void initializeAndroidClient(){
-        /* Create socket for contacting the server on port 4321*/
         try {
             requestSocket = new Socket("localhost", 10001);
 

@@ -22,12 +22,12 @@ public class MasterclassNEW implements Master {
     private ArrayList<ClientHandler> clientConnections = new ArrayList<ClientHandler>();
     private ArrayList<String> Clients = new ArrayList<String>();
     private HashMap<Object,Long> memoryRank = new HashMap<Object, Long>();
-    private int MAX_WORKERS = 6;
+    private int MAX_WORKERS = 3;
     private int k=100;
     private HashMap<Object,RealMatrix> resultsX = new HashMap<>();
     private HashMap<Object,RealMatrix> resultsY = new HashMap<>();
-    ObjectInputStream in;
-    ObjectOutputStream out;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
 
     public void initialize(){
         String fileName = "src/main/java/input_matrix_no_zeros.csv";
@@ -51,97 +51,122 @@ public class MasterclassNEW implements Master {
                 in = new ObjectInputStream(s.getInputStream());
                 out = new ObjectOutputStream(s.getOutputStream());
                 Object type = in.readObject();
-                System.out.println(type);
-                if (type.equals("worker")) {
-                System.out.println("We have a new worker connection...");
-                WorkerHandler sc = new WorkerHandler(s,this,connectionID++,in ,out);
-                sc.start();
-                connections.add(sc);
-                Object cores = sc.getData();
-                Object memory = sc.getData();
-                System.out.println("Cores :" + cores);
-                System.out.println("Memory :" + memory);
-                memoryRank.put(sc.id,(Long)memory);
-                connections.get(connectionID-1).sendData(P);
-                connections.get(connectionID-1).sendData(C);
-                if(connectionID==MAX_WORKERS){
-                    double error = 0.0;
-                    double NewError,TotalError;
-                    int haveWork;
-                    Object epochs;
-                    for(int epoch=0; epoch<30; epoch++) {
-                        sendWork();
-                        for (int i = 0; i < MAX_WORKERS; i++) {
-                            int finalI = i;
-                            Thread t1 = new Thread(() -> {
-                                boolean haveResults = (boolean) connections.get(finalI).getData();
-                                if (haveResults) {
-                                    connections.get(finalI).readResults();
-                                }
-                            });
-                            t1.start();
-                            t1.join();
-                        }
-                        System.out.println("Will reconstruct X,Y and run error calculations!!!");
-                        int Xstart = 0;
-                        int Ystart = 0;
-                        String name;
-                        for (int i = 0; i < MAX_WORKERS; i++) {
-                            name = "Worker_" + i;
-                            RealMatrix tempX = resultsX.get(name);
-                            RealMatrix tempY = resultsY.get(name);
-                            for (int row = 0; row < tempX.getRowDimension(); row++) {
-                                X.setRowMatrix(Xstart, tempX.getRowMatrix(row));
-                                Xstart++;
-                            }
-                            for (int rowY = 0; rowY < tempY.getRowDimension(); rowY++) {
-                                Y.setRowMatrix(Ystart, tempY.getRowMatrix(rowY));
-                                Ystart++;
-                            }
-                        }
-                        NewError = calculateError();
-                        TotalError = Math.abs(NewError - error);
-                        System.out.println("The error is: " + TotalError);
-                        if(TotalError > 0.01){
-                            error = NewError;
-                            haveWork = 1;
-                            epochs=true;
+                if(type.equals("worker")){
+                    System.out.println("We have a new worker connection...");
+                    WorkerHandler sc = new WorkerHandler(s,this,connectionID++,in ,out);
+                    sc.start();
+                    connections.add(sc);
+                    Object cores = sc.getData();
+                    Object memory = sc.getData();
+                    sc.sleep(sc);
+                    System.out.println("Cores :" + cores);
+                    System.out.println("Memory :" + memory);
+                    memoryRank.put(sc.id,(Long)memory);
+                    connections.get(connectionID-1).sendData(P.copy());
+                    connections.get(connectionID-1).sendData(C.copy());
+                    if(connectionID==MAX_WORKERS){
+                        double error = 0.0;
+                        double NewError,TotalError;
+                        int haveWork;
+                        boolean threshold = false;
+                        for(int epoch=0; epoch<16; epoch++) {
+
+                            //FOR MATRIX X
+                            sendWorkX();
                             for (int i = 0; i < MAX_WORKERS; i++) {
-                                connections.get(i).sendData(haveWork);
-                                connections.get(i).sendData(epochs);
+                                int finalI = i;
+                                Thread t1 = new Thread(() -> {
+                                    boolean haveResults = (boolean) connections.get(finalI).getData();
+                                    if (haveResults) {
+                                        connections.get(finalI).readResultsForX();
+                                    }
+                                });
+                                t1.start();
+                                t1.join();
                             }
-                            System.out.println("We will continue training!!!");
-                        }else{
+                            System.out.println("Will reconstruct X and then distribute Y!!!");
+                            int Xstart = 0;
+                            String name;
+                            for (int i = 0; i < MAX_WORKERS; i++) {
+                                name = "Worker_" + i;
+                                RealMatrix tempX = resultsX.get(name);
+                                for (int row = 0; row < tempX.getRowDimension(); row++) {
+                                    X.setRowMatrix(Xstart, tempX.getRowMatrix(row));
+                                    Xstart++;
+                                }
+                            }
+
+                            //FOR MATRIX Y
+                            sendWorkY();
+                            for (int i = 0; i < MAX_WORKERS; i++) {
+                                int finalI = i;
+                                Thread t1 = new Thread(() -> {
+                                    boolean haveResults = (boolean) connections.get(finalI).getData();
+                                    if (haveResults) {
+                                        connections.get(finalI).readResultsForY();
+                                    }
+                                });
+                                t1.start();
+                                t1.join();
+                            }
+                            System.out.println("Will reconstruct Y and then run error calculations!!!");
+                            int Ystart = 0;
+                            String name1;
+                            for (int i = 0; i < MAX_WORKERS; i++) {
+                                name1 = "Worker_" + i;
+                                RealMatrix tempY = resultsY.get(name1);
+                                for (int row = 0; row < tempY.getRowDimension(); row++) {
+                                    Y.setRowMatrix(Ystart, tempY.getRowMatrix(row));
+                                    Ystart++;
+                                }
+                            }
+
+                            //RUN ERROR CALCULATION
+                            NewError = calculateError();
+                            TotalError = Math.abs(error - NewError);
+                            System.out.println("The error is: " + TotalError);
+                            if(TotalError > 0.01){
+                                error = NewError;
+                                haveWork = 1;
+                                for (int i = 0; i < MAX_WORKERS; i++) {
+                                    connections.get(i).sendData(haveWork);
+                                }
+                                System.out.println("We will continue training!!!");
+                            }else{
+                                threshold = true;
+                                break;
+                            }
+                            System.out.println("Epoch is: " + epoch);
+                        }
+                        if(threshold){
                             System.out.println("We reached the threshhold...training will stop...");
                             haveWork = 0;
                             for (int i = 0; i < MAX_WORKERS; i++) {
                                 connections.get(i).sendData(haveWork);
+                                connections.get(i).kill(i);
                             }
                             try {
                                 in.close();
                                 out.close();
-                            } catch (IOException e){
+                            }catch(IOException e){
                                 e.printStackTrace();
                             }
-                            break;
+                        }else{
+                            System.out.println("Epochs are over...");
+                            haveWork = 0;
+                            for (int i = 0; i < MAX_WORKERS; i++) {
+                                connections.get(i).sendData(haveWork);
+                                connections.get(i).kill(i);
+                            }
+                            try {
+                                in.close();
+                                out.close();
+                            }catch(IOException e){
+                                e.printStackTrace();
+                            }
                         }
-                        System.out.println("Epoch is: " + epoch);
                     }
-                    System.out.println("Epochs are over...");
-                    haveWork = 0;
-                    epochs=false;
-                    for (int i = 0; i < MAX_WORKERS; i++) {
-                        connections.get(i).sendData(haveWork);
-                        connections.get(i).sendData(epochs);
-                    }
-                    try {
-                        in.close();
-                        out.close();
-                    } catch (IOException e){
-                        e.printStackTrace();
-                    }
-                }
-                } else if(type.equals("user")){
+                }else if(type.equals("user")){
                     System.out.println("We have a new client connection...");
                     ClientHandler sc = new ClientHandler(s,this,connectionID++, in, out);
                     clientConnections.add(sc);
@@ -163,21 +188,29 @@ public class MasterclassNEW implements Master {
         resultsY.put(name,temp);
     }
 
-    public void sendWork(){
+    public void sendWorkX(){
         //Ranking by memory
         memoryRank.entrySet().stream()
                 .sorted(Map.Entry.<Object,Long>comparingByValue().reversed())
                 .forEach(System.out::println);
 
         int loadperWorkerX = X.getRowDimension()/MAX_WORKERS;
-        int loadperWorkerY = Y.getRowDimension()/MAX_WORKERS;
         int loadWorkerModX = X.getRowDimension()%MAX_WORKERS;
-        int loadWorkerModY = Y.getRowDimension()%MAX_WORKERS;
         int startX = 0;
         int endX=loadperWorkerX;
+        distributeXMatrixToWorkers(startX,endX,loadperWorkerX,loadWorkerModX);
+    }
+
+    public void sendWorkY(){
+        //Ranking by memory
+        memoryRank.entrySet().stream()
+                .sorted(Map.Entry.<Object,Long>comparingByValue().reversed())
+                .forEach(System.out::println);
+
+        int loadperWorkerY = Y.getRowDimension()/MAX_WORKERS;
+        int loadWorkerModY = Y.getRowDimension()%MAX_WORKERS;
         int startY = 0;
         int endY=loadperWorkerY;
-        distributeXMatrixToWorkers(startX,endX,loadperWorkerX,loadWorkerModX);
         distributeYMatrixToWorkers(startY,endY,loadperWorkerY,loadWorkerModY);
     }
 
@@ -205,10 +238,16 @@ public class MasterclassNEW implements Master {
     public void createXY(){
         X = MatrixUtils.createRealMatrix(dataset.getRowDimension(),k);
         Y = MatrixUtils.createRealMatrix(dataset.getColumnDimension(),k);
-        Random randomgen = new Random();
+
+        for(int i=0; i<X.getRowDimension(); i++){
+            for(int j=0; j<k; j++){
+                X.setEntry(i, j, Math.random());
+            }
+        }
+
         for(int i=0; i<Y.getRowDimension(); i++){
             for(int j=0; j<k; j++) {
-                Y.setEntry(i, j, randomgen.nextDouble());
+                Y.setEntry(i, j, Math.random());
             }
         }
     }
@@ -218,16 +257,17 @@ public class MasterclassNEW implements Master {
             if (i != MAX_WORKERS-1) {
                 RealMatrix sliceX = MatrixUtils.createRealMatrix(loadperWorkerX, k);
                 for (int q = 0; q < sliceX.getRowDimension(); q++) {
-                    for (int m = 0; m < sliceX.getColumnDimension(); m++) {
+                    for (int m = 0; m < sliceX.getColumnDimension(); m++){
                         sliceX.setEntry(q, m, X.getEntry(q, m));
                     }
                 }
                 try {
+                    connections.get(i).sendData(Y.copy());
                     connections.get(i).sendPayload(sliceX, startX, endX);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                startX = endX + 1;
+                startX = endX;
                 endX += loadperWorkerX;
             }else{
                 RealMatrix sliceX = MatrixUtils.createRealMatrix(X.getRowDimension() - startX, k);
@@ -237,6 +277,7 @@ public class MasterclassNEW implements Master {
                     }
                 }
                 try {
+                    connections.get(i).sendData(Y.copy());
                     connections.get(i).sendPayload(sliceX, startX, endX + loadWorkerModX);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -255,11 +296,12 @@ public class MasterclassNEW implements Master {
                     }
                 }
                 try {
+                    connections.get(i).sendData(X.copy());
                     connections.get(i).sendPayload(sliceY, startY, endY);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-                startY = endY + 1;
+                startY = endY;
                 endY += loadperWorkerY;
             }else{
                 RealMatrix sliceY = MatrixUtils.createRealMatrix(Y.getRowDimension()-startY, k);
@@ -269,6 +311,7 @@ public class MasterclassNEW implements Master {
                     }
                 }
                 try {
+                    connections.get(i).sendData(X.copy());
                     connections.get(i).sendPayload(sliceY, startY, endY + loadWorkerModY);
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -282,13 +325,15 @@ public class MasterclassNEW implements Master {
         double Error = 0.0;
         double TotalError = 0.0;
         double l = 0.01;
+        double temp;
         for (int user = 0; user < P.getRowDimension(); user++) {
             for (int item = 0; item < P.getColumnDimension(); item++) {
                 ModelPrediction = X.getRowMatrix(user).multiply(Y.getRowMatrix(item).transpose()).getEntry(0, 0);
                 RealPrediction = P.getEntry(user, item);
                 CmatrixPred = C.getEntry(user, item);
                 Difference = RealPrediction - ModelPrediction;
-                MeanSquaredError = CmatrixPred * Math.pow(Difference, 2);
+                temp = Math.pow(Difference, 2);
+                MeanSquaredError = CmatrixPred * temp;
                 Error = Error + MeanSquaredError;
             }
         }

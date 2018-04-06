@@ -24,7 +24,7 @@ public class WorkerHandler extends Thread implements Runnable{
         this.out.flush();
     }
 
-    public void sendPayload(Object payload,int i,int j) throws IOException {
+    public void sendPayload(RealMatrix payload,int i,int j) throws IOException {
         this.out.writeObject(payload);
         this.out.flush();
         this.out.writeInt(i);
@@ -42,25 +42,52 @@ public class WorkerHandler extends Thread implements Runnable{
         return null;
     }
 
-    public void readResults(){
+    public void readResultsForY(){
         String name;
-        RealMatrix X,Y;
+        RealMatrix Y;
         try{
             name = (String) this.in.readObject();
-            System.out.println("Hi this is worker: " + name + " and i am sending you my results!!");
-            X = (RealMatrix) this.in.readObject();
+            System.out.println("Hi this is worker: " + name + " and i am sending you my results for Yslice!!");
             Y = (RealMatrix) this.in.readObject();
-            server.setResultsX(name,X);
             server.setResultsY(name,Y);
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
     }
 
+    public void readResultsForX(){
+        String name;
+        RealMatrix X;
+        try{
+            name = (String) this.in.readObject();
+            System.out.println("Hi this is worker: " + name + " and i am sending you my results for Xslice!!");
+            X = (RealMatrix) this.in.readObject();
+            server.setResultsX(name,X);
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+
+    public void kill(int i){
+        try {
+            System.out.println("Closing communication with Worker_"+ i);
+            this.out.close();
+            this.in.close();
+            this.connection.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public void sleep(WorkerHandler sc) throws InterruptedException {
+        sc.sleep(1000);
+    }
 
     @Override
     public void run() {
-        System.out.println("Accepted client: " + id);
+        System.out.println("Accepted worker: " + id);
         String status = "Worker_"+id;
         try{
             this.out.writeObject(status);
