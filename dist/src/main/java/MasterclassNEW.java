@@ -53,94 +53,94 @@ public class MasterclassNEW implements Master {
                 Object type = in.readObject();
                 System.out.println(type);
                 if (type.equals("worker")) {
-                System.out.println("We have a new worker connection...");
-                WorkerHandler sc = new WorkerHandler(s,this,connectionID++,in ,out);
-                sc.start();
-                connections.add(sc);
-                Object cores = sc.getData();
-                Object memory = sc.getData();
-                System.out.println("Cores :" + cores);
-                System.out.println("Memory :" + memory);
-                memoryRank.put(sc.id,(Long)memory);
-                connections.get(connectionID-1).sendData(P);
-                connections.get(connectionID-1).sendData(C);
-                if(connectionID==MAX_WORKERS){
-                    double error = 0.0;
-                    double NewError,TotalError;
-                    int haveWork;
-                    Object epochs;
-                    for(int epoch=0; epoch<30; epoch++) {
-                        sendWork();
-                        for (int i = 0; i < MAX_WORKERS; i++) {
-                            int finalI = i;
-                            Thread t1 = new Thread(() -> {
-                                boolean haveResults = (boolean) connections.get(finalI).getData();
-                                if (haveResults) {
-                                    connections.get(finalI).readResults();
+                    System.out.println("We have a new worker connection...");
+                    WorkerHandler sc = new WorkerHandler(s,this,connectionID++,in ,out);
+                    sc.start();
+                    connections.add(sc);
+                    Object cores = sc.getData();
+                    Object memory = sc.getData();
+                    System.out.println("Cores :" + cores);
+                    System.out.println("Memory :" + memory);
+                    memoryRank.put(sc.id,(Long)memory);
+                    connections.get(connectionID-1).sendData(P);
+                    connections.get(connectionID-1).sendData(C);
+                    if(connectionID==MAX_WORKERS){
+                        double error = 0.0;
+                        double NewError,TotalError;
+                        int haveWork;
+                        Object epochs;
+                        for(int epoch=0; epoch<30; epoch++) {
+                            sendWork();
+                            for (int i = 0; i < MAX_WORKERS; i++) {
+                                int finalI = i;
+                                Thread t1 = new Thread(() -> {
+                                    boolean haveResults = (boolean) connections.get(finalI).getData();
+                                    if (haveResults) {
+                                        connections.get(finalI).readResults();
+                                    }
+                                });
+                                t1.start();
+                                t1.join();
+                            }
+                            System.out.println("Will reconstruct X,Y and run error calculations!!!");
+                            int Xstart = 0;
+                            int Ystart = 0;
+                            String name;
+                            for (int i = 0; i < MAX_WORKERS; i++) {
+                                name = "Worker_" + i;
+                                RealMatrix tempX = resultsX.get(name);
+                                RealMatrix tempY = resultsY.get(name);
+                                for (int row = 0; row < tempX.getRowDimension(); row++) {
+                                    X.setRowMatrix(Xstart, tempX.getRowMatrix(row));
+                                    Xstart++;
                                 }
-                            });
-                            t1.start();
-                            t1.join();
+                                for (int rowY = 0; rowY < tempY.getRowDimension(); rowY++) {
+                                    Y.setRowMatrix(Ystart, tempY.getRowMatrix(rowY));
+                                    Ystart++;
+                                }
+                            }
+                            NewError = calculateError();
+                            TotalError = Math.abs(NewError - error);
+                            System.out.println("The error is: " + TotalError);
+                            if(TotalError > 0.01){
+                                error = NewError;
+                                haveWork = 1;
+                                epochs=true;
+                                for (int i = 0; i < MAX_WORKERS; i++) {
+                                    connections.get(i).sendData(haveWork);
+                                    connections.get(i).sendData(epochs);
+                                }
+                                System.out.println("We will continue training!!!");
+                            }else{
+                                System.out.println("We reached the threshhold...training will stop...");
+                                haveWork = 0;
+                                for (int i = 0; i < MAX_WORKERS; i++) {
+                                    connections.get(i).sendData(haveWork);
+                                }
+                                try {
+                                    in.close();
+                                    out.close();
+                                } catch (IOException e){
+                                    e.printStackTrace();
+                                }
+                                break;
+                            }
+                            System.out.println("Epoch is: " + epoch);
                         }
-                        System.out.println("Will reconstruct X,Y and run error calculations!!!");
-                        int Xstart = 0;
-                        int Ystart = 0;
-                        String name;
+                        System.out.println("Epochs are over...");
+                        haveWork = 0;
+                        epochs=false;
                         for (int i = 0; i < MAX_WORKERS; i++) {
-                            name = "Worker_" + i;
-                            RealMatrix tempX = resultsX.get(name);
-                            RealMatrix tempY = resultsY.get(name);
-                            for (int row = 0; row < tempX.getRowDimension(); row++) {
-                                X.setRowMatrix(Xstart, tempX.getRowMatrix(row));
-                                Xstart++;
-                            }
-                            for (int rowY = 0; rowY < tempY.getRowDimension(); rowY++) {
-                                Y.setRowMatrix(Ystart, tempY.getRowMatrix(rowY));
-                                Ystart++;
-                            }
+                            connections.get(i).sendData(haveWork);
+                            connections.get(i).sendData(epochs);
                         }
-                        NewError = calculateError();
-                        TotalError = Math.abs(NewError - error);
-                        System.out.println("The error is: " + TotalError);
-                        if(TotalError > 0.01){
-                            error = NewError;
-                            haveWork = 1;
-                            epochs=true;
-                            for (int i = 0; i < MAX_WORKERS; i++) {
-                                connections.get(i).sendData(haveWork);
-                                connections.get(i).sendData(epochs);
-                            }
-                            System.out.println("We will continue training!!!");
-                        }else{
-                            System.out.println("We reached the threshhold...training will stop...");
-                            haveWork = 0;
-                            for (int i = 0; i < MAX_WORKERS; i++) {
-                                connections.get(i).sendData(haveWork);
-                            }
-                            try {
-                                in.close();
-                                out.close();
-                            } catch (IOException e){
-                                e.printStackTrace();
-                            }
-                            break;
+                        try {
+                            in.close();
+                            out.close();
+                        } catch (IOException e){
+                            e.printStackTrace();
                         }
-                        System.out.println("Epoch is: " + epoch);
                     }
-                    System.out.println("Epochs are over...");
-                    haveWork = 0;
-                    epochs=false;
-                    for (int i = 0; i < MAX_WORKERS; i++) {
-                        connections.get(i).sendData(haveWork);
-                        connections.get(i).sendData(epochs);
-                    }
-                    try {
-                        in.close();
-                        out.close();
-                    } catch (IOException e){
-                        e.printStackTrace();
-                    }
-                }
                 } else if(type.equals("user")){
                     System.out.println("We have a new client connection...");
                     ClientHandler sc = new ClientHandler(s,this,connectionID++, in, out);
