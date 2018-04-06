@@ -24,7 +24,7 @@ public class ClientHandler extends Thread implements Runnable{
         this.id = id;
     }
 
-    public void sendData(String rd) throws IOException {
+    public void sendData(Object rd) throws IOException {
         this.out.writeObject(rd);
         this.out.flush();
     }
@@ -32,7 +32,7 @@ public class ClientHandler extends Thread implements Runnable{
 
     public Object getData(){
         try {
-            return in.readObject();
+            return this.in.readObject();
         } catch (ClassNotFoundException e) {
             e.printStackTrace();
         } catch (IOException e) {
