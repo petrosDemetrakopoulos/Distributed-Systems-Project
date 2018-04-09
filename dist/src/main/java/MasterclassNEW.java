@@ -23,8 +23,8 @@ public class MasterclassNEW implements Master {
     private ArrayList<ClientHandler> clientConnections = new ArrayList<ClientHandler>();
     private ArrayList<String> Clients = new ArrayList<String>();
     private HashMap<Object,Long> memoryRank = new HashMap<Object, Long>();
-    private int MAX_WORKERS = 6;
-    private int k = 20;
+    private int MAX_WORKERS = 3;
+    private int k = 100;
     private HashMap<Object,RealMatrix> resultsX = new HashMap<>();
     private HashMap<Object,RealMatrix> resultsY = new HashMap<>();
     private ObjectInputStream in;
@@ -171,6 +171,7 @@ public class MasterclassNEW implements Master {
                     System.out.println("We have a new client connection...");
                     ClientHandler sc = new ClientHandler(s,this,clientConnectionID++, in, out);
                     int crnUserID = clientConnectionID;
+                    System.out.println(crnUserID);
                     clientConnections.add(sc);
                     Object name = sc.getData();
                     sc.sendData("Welcome! " + (String)name);
@@ -292,16 +293,11 @@ public class MasterclassNEW implements Master {
     public void createXY(){
         X = MatrixUtils.createRealMatrix(dataset.getRowDimension(),k);
         Y = MatrixUtils.createRealMatrix(dataset.getColumnDimension(),k);
-
-        for(int i=0; i<X.getRowDimension(); i++){
-            for(int j=0; j<k; j++){
-                X.setEntry(i, j, Math.random());
-            }
-        }
+        Random random = new Random();
 
         for(int i=0; i<Y.getRowDimension(); i++){
             for(int j=0; j<k; j++) {
-                Y.setEntry(i, j, Math.random());
+                Y.setEntry(i, j, random.nextDouble());
             }
         }
     }
@@ -377,7 +373,7 @@ public class MasterclassNEW implements Master {
     public double calculateError() {
         double ModelPrediction, RealPrediction, CmatrixPred, MeanSquaredError, Difference, Regularization;
         double Error = 0.0;
-        double TotalError = 0.0;
+        double TotalError;
         double l = 0.01;
         double temp;
         for (int user = 0; user < P.getRowDimension(); user++) {
@@ -392,7 +388,7 @@ public class MasterclassNEW implements Master {
             }
         }
         Regularization = calculateRegularization();
-        TotalError = TotalError + l * Regularization;
+        TotalError = Error + l * Regularization;
         return TotalError;
     }
 

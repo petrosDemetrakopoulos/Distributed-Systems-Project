@@ -65,14 +65,11 @@ public class WorkerClass implements Worker{
             trainY(Yslice,X);
             System.out.println("Calculations done for Yslice...sending results to master!!!");
             sendResultsToMasterForY(in,out,Yslice);
-
         }catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
         } catch (Exception ioException) {
             ioException.printStackTrace();
         }
-
-
         System.out.println("Waiting for new work... :(");
         int haveWork;
         try {
