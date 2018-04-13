@@ -30,6 +30,7 @@ public class WorkerClass implements Worker{
         try{
             requestSocket = new Socket("localhost",10001);
             out = new ObjectOutputStream(requestSocket.getOutputStream());
+            out.flush();
             in = new ObjectInputStream(requestSocket.getInputStream());
             out.writeObject(type);
             out.flush();

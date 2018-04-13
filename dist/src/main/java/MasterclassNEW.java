@@ -51,6 +51,7 @@ public class MasterclassNEW implements Master {
                 Socket s =  socketprovider.accept();
                 in = new ObjectInputStream(s.getInputStream());
                 out = new ObjectOutputStream(s.getOutputStream());
+                out.flush();
                 Object type = in.readObject();
                 if(type.equals("worker")){
                     System.out.println("We have a new worker connection...");
@@ -70,7 +71,7 @@ public class MasterclassNEW implements Master {
                         double NewError,TotalError;
                         int haveWork;
                         boolean threshold = false;
-                        for(int epoch=0; epoch<16; epoch++) {
+                        for(int epoch=0; epoch<20; epoch++) {
 
                             //FOR MATRIX X
                             sendWorkX();

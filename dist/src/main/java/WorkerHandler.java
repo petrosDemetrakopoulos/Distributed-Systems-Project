@@ -11,9 +11,10 @@ public class WorkerHandler extends Thread implements Runnable{
     private ObjectInputStream in;
     private ObjectOutputStream out;
 
-    public WorkerHandler(Socket connection, MasterclassNEW server,int id,ObjectInputStream in,ObjectOutputStream out) {
+    public WorkerHandler(Socket connection, MasterclassNEW server,int id,ObjectInputStream in,ObjectOutputStream out) throws IOException {
         this.in = in;
         this.out = out;
+        this.out.flush();
         this.connection = connection;
         this.server = server;
         this.id = id;
