@@ -6,12 +6,12 @@ import java.io.*;
 
 public class WorkerHandler extends Thread implements Runnable{
     private Socket connection;
-    private MasterclassNEW server;
+    private Masterclass server;
     int id;
     private ObjectInputStream in;
     private ObjectOutputStream out;
 
-    public WorkerHandler(Socket connection, MasterclassNEW server,int id,ObjectInputStream in,ObjectOutputStream out) throws IOException {
+    public WorkerHandler(Socket connection, Masterclass server, int id, ObjectInputStream in, ObjectOutputStream out) throws IOException {
         this.in = in;
         this.out = out;
         this.out.flush();

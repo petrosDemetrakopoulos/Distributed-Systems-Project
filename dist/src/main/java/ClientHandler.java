@@ -2,18 +2,17 @@
 
 import java.net.*;
 import java.io.*;
-import java.util.HashMap;
 
 
 public class ClientHandler extends Thread implements Runnable{
     private Socket connection;
-    private MasterclassNEW server;
+    private Masterclass server;
     int id = 0;
     ServerSocket serverSocket = null;
     ObjectInputStream in;
     ObjectOutputStream out;
 
-    public ClientHandler(Socket connection, MasterclassNEW server,int id, ObjectInputStream in,ObjectOutputStream out) {
+    public ClientHandler(Socket connection, Masterclass server, int id, ObjectInputStream in, ObjectOutputStream out) {
         this.in = in;
         this.out = out;
         this.connection = connection;

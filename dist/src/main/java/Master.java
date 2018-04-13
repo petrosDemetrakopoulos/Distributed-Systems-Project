@@ -3,20 +3,20 @@ import org.apache.commons.math3.linear.RealMatrix;
 import java.util.List;
 
 public interface Master {
-    public void initialize();
+    void initialize();
 
-    public void calculateCMatrix(RealMatrix realMatrix);
+    void calculateCMatrix(RealMatrix realMatrix);
 
-    public void calculatePMatrix(RealMatrix realMatrix);
+    void calculatePMatrix(RealMatrix realMatrix);
 
-    //public void distributeXMatrixToWorkers(int i, int j, RealMatrix realMatrix);
+    void distributeXMatrixToWorkers(int startX, int endX,int loadperWorkerX,int loadWorkerModX);
 
-    //public void distributeYMatrixToWorkers(int i, int j, RealMatrix realMatrix);
+    void distributeYMatrixToWorkers(int startY, int endY,int loadperWorkerY,int loadWorkerModY );
 
-    //public double calculateError();
+    double calculateError();
 
-    //public double calculateScore(int i,int j);
+    double calculateScore(int i,int j);
 
-    //public List<Poi> calculateBestLocalPoisForUser(int i,double k,double l,int j);
+    //List<Poi> calculateBestLocalPoisForUser(int i,double k,double l,int j);
 
 }

@@ -40,7 +40,6 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
                 }
             });
             t1.run();
-          //  listenFromServer(requestSocket);
             menu();
         }  catch (UnknownHostException unknownHost) {
             System.err.println("You are trying to connect to an unknown host!");
@@ -52,7 +51,6 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
                 out.writeObject("LOGOUT USER " + clientNo);
                 out.flush();
                 out.close();
-               // requestSocket.close();
             } catch (IOException ioException) {
                 ioException.printStackTrace();
             }
@@ -61,9 +59,7 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
 
     public void sendNumberOfPois(Integer numOfPois){
         try {
-          //  out = new ObjectOutputStream(requestSocket.getOutputStream());
-           // out.writeObject(username);
-           // out.flush();
+
             out.writeObject(numOfPois.toString());
             out.flush();
             Object res = in.readObject();
@@ -80,14 +76,7 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
         } catch (Exception ioException) {
             ioException.printStackTrace();
         }
-// finally {
-//            try {
-//                out.close();
-//                requestSocket.close();
-//            } catch (IOException ioException) {
-//                ioException.printStackTrace();
-//            }
-//        }
+
     }
 
     public void menu(){
@@ -130,9 +119,7 @@ public class AndroidUser extends Thread implements AndroidClient, Runnable {
 
     }
 
-  //  public void listenFromServer(Socket connection) {
 
-   // }
     public static void main(String args[]){
         new AndroidUser().initializeAndroidClient();
     }
