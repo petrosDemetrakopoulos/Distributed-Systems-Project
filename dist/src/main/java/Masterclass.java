@@ -246,7 +246,7 @@ public class Masterclass implements Master {
     }
 
     public void sendWorkY(){
-        
+
         //Ranking by memory
         memoryRank.entrySet().stream()
                 .sorted(Map.Entry.<Object,Long>comparingByValue().reversed());
