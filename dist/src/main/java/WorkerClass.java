@@ -173,7 +173,7 @@ public class WorkerClass implements Worker{
 
     public RealMatrix calculate_x_u(int user, RealMatrix realMatrixY, RealMatrix YtY) {
         //TO x_u EINAI GIA KA8E XRHSTH u!!!
-        double l = 0.01;
+        double l = 0.1;
         RealMatrix realMatrixCu = calculateCuMatrix(user,Cmatrix);
         RealMatrix Ytranspose = realMatrixY.transpose();
         RealMatrix IdentityMatrix1 = MatrixUtils.createRealIdentityMatrix(realMatrixCu.getColumnDimension());
@@ -185,16 +185,16 @@ public class WorkerClass implements Worker{
         RealMatrix regularization = IdentityMatrix.scalarMultiply(l);
         RealMatrix inverseTerm = addition1.add(regularization);
         RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
-        RealMatrix multiplication2 = Ytranspose.multiply(realMatrixCu);
+        RealMatrix multiplication2 = Inverse.multiply(Ytranspose);
         RealMatrix pu = MatrixUtils.createColumnRealMatrix(P.getRow(user));//ftiaxnei to p(u)
-        RealMatrix multiplication3 = multiplication2.multiply(pu);
-        RealMatrix x_u = Inverse.multiply(multiplication3);
+        RealMatrix multiplication3 = multiplication2.multiply(realMatrixCu);
+        RealMatrix x_u = multiplication3.multiply(pu);
         return x_u;
     }
 
 
     public RealMatrix calculate_y_i(int item, RealMatrix realMatrixX, RealMatrix XtX) {
-        double l = 0.01;
+        double l = 0.1;
         RealMatrix realMatrixCi = calculateCiMatrix(item,Cmatrix);
         RealMatrix Xtranspose = realMatrixX.transpose();
         RealMatrix IdentityMatrix1 = MatrixUtils.createRealIdentityMatrix(realMatrixCi.getColumnDimension());
@@ -206,10 +206,10 @@ public class WorkerClass implements Worker{
         RealMatrix regularization = IdentityMatrix.scalarMultiply(l);
         RealMatrix inverseTerm = addition1.add(regularization);
         RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
-        RealMatrix multiplication2 = Xtranspose.multiply(realMatrixCi);
+        RealMatrix multiplication2 = Inverse.multiply(Xtranspose);
         RealMatrix pi = MatrixUtils.createColumnRealMatrix(P.getColumn(item));//ftiaxnei to p(u)
-        RealMatrix multiplication3 = multiplication2.multiply(pi);
-        RealMatrix y_i = Inverse.multiply(multiplication3);
+        RealMatrix multiplication3 = multiplication2.multiply(realMatrixCi);
+        RealMatrix y_i = multiplication3.multiply(pi);
         return y_i;
     }
 
@@ -227,7 +227,7 @@ public class WorkerClass implements Worker{
         RealMatrix YtY = preCalculateYY(Y);
         int Xuser=0;
         for (int user = Xstart; user < Xend; user++) {
-            Xslice.setRowMatrix(Xuser, calculate_x_u(user, Y, YtY).transpose());
+            Xslice.setRowMatrix(Xuser, calculate_x_u(user, Y,YtY).transpose());
             Xuser++;
         }
     }
@@ -238,7 +238,7 @@ public class WorkerClass implements Worker{
         RealMatrix XtX = preCalculateXX(X);
         int poi = 0;
         for (int item = Ystart; item < Yend; item++) {
-            Yslice.setRowMatrix(poi, calculate_y_i(item, X, XtX).transpose());
+            Yslice.setRowMatrix(poi, calculate_y_i(item, X,XtX).transpose());
             poi++;
         }
     }

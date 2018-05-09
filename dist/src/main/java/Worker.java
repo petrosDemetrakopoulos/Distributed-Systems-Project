@@ -13,9 +13,9 @@ public interface Worker {
 
     RealMatrix preCalculateXX(RealMatrix realMatrix);
 
-    RealMatrix calculate_x_u(int i, RealMatrix realMatrix1, RealMatrix realMatrix2);
+    RealMatrix calculate_x_u(int i, RealMatrix realMatrix1,RealMatrix realMatrix2);
 
-    RealMatrix calculate_y_i(int i, RealMatrix realMatrix1, RealMatrix realMatrix2);
+    RealMatrix calculate_y_i(int i, RealMatrix realMatrix1,RealMatrix realMatrix2);
 
     void sendResultsToMasterForX(ObjectInputStream in,ObjectOutputStream out,RealMatrix Xslice);
 

@@ -1,5 +1,6 @@
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.random.JDKRandomGenerator;
 
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -18,7 +19,7 @@ public class Masterclass implements Master {
     private ArrayList<String> Clients = new ArrayList<String>();
     private HashMap<Object,Long> memoryRank = new HashMap<Object, Long>();
     private int MAX_WORKERS = 3;
-    private int k = 100;
+    private int k = 20;
     private HashMap<Object,RealMatrix> resultsX = new HashMap<>();
     private HashMap<Object,RealMatrix> resultsY = new HashMap<>();
     private ObjectInputStream in;
@@ -65,7 +66,7 @@ public class Masterclass implements Master {
                         double NewError,TotalError;
                         int haveWork;
                         boolean threshold = false;
-                        for(int epoch=0; epoch<20; epoch++) {
+                        for(int epoch=0; epoch<5; epoch++) {
 
                             //FOR MATRIX X
                             sendWorkX();
@@ -120,7 +121,7 @@ public class Masterclass implements Master {
                             //RUN ERROR CALCULATION
                             NewError = calculateError();
                             TotalError = Math.abs(error - NewError);
-                            System.out.println("The error is: " + TotalError);
+                            System.out.println("The cost function is: " + NewError);
                             if(TotalError > 0.01){
                                 error = NewError;
                                 haveWork = 1;
@@ -164,8 +165,8 @@ public class Masterclass implements Master {
                     }
                 }else if(type.equals("user")){
                     System.out.println("We have a new client connection...");
-                    ClientHandler sc = new ClientHandler(s,this,clientConnectionID++, in, out);
-                    int crnUserID = clientConnectionID;
+                    ClientHandler sc = new ClientHandler(s,this,764, in, out);
+                    int crnUserID = 764;
                     System.out.println(crnUserID);
                     clientConnections.add(sc);
                     Object name = sc.getData();
@@ -173,14 +174,12 @@ public class Masterclass implements Master {
                     Clients.add((String)name);
                     Object numOfPois = sc.getData();
                     String stringifiedNumOfPois = (String)numOfPois;
-                    ArrayList<Double> scoresForPois = new ArrayList<>();
-                    ArrayList<Integer> poisIds = new ArrayList<>();
-                    HashMap<Integer, Double> hmap = new HashMap<Integer, Double>();
+                    HashMap<Integer, Double> hmap = new HashMap<>();
                     for(int i=0; i<Y.getRowDimension(); i++){ //for each poi
                         double crnRes = calculateScore(crnUserID, i);
                         hmap.put(i,crnRes);
                     }
-                    Map<Integer, Double> map = sortByValues(hmap);
+                    HashMap map = sortByValues(hmap);
                     System.out.println("After Sorting:");
                     Set set2 = map.entrySet();
                     Iterator iterator2 = set2.iterator();
@@ -213,12 +212,8 @@ public class Masterclass implements Master {
     private static HashMap sortByValues(HashMap map) {
         List list = new LinkedList(map.entrySet());
         // Defined Custom Comparator here
-        Collections.sort(list, new Comparator() {
-            public int compare(Object o1, Object o2) {
-                return ((Comparable) ((Map.Entry) (o2)).getValue())
-                        .compareTo(((Map.Entry) (o1)).getValue());
-            }
-        });
+        Collections.sort(list, (Comparator) (o1, o2) -> ((Comparable) ((Map.Entry) (o2)).getValue())
+                .compareTo(((Map.Entry) (o1)).getValue()));
 
         // Here I am copying the sorted list in HashMap
         // using LinkedHashMap to preserve the insertion order
@@ -241,8 +236,7 @@ public class Masterclass implements Master {
     public void sendWorkX(){
         //Ranking by memory
         memoryRank.entrySet().stream()
-                .sorted(Map.Entry.<Object,Long>comparingByValue().reversed())
-                .forEach(System.out::println);
+                .sorted(Map.Entry.<Object,Long>comparingByValue().reversed());
 
         int loadperWorkerX = X.getRowDimension()/MAX_WORKERS;
         int loadWorkerModX = X.getRowDimension()%MAX_WORKERS;
@@ -254,8 +248,7 @@ public class Masterclass implements Master {
     public void sendWorkY(){
         //Ranking by memory
         memoryRank.entrySet().stream()
-                .sorted(Map.Entry.<Object,Long>comparingByValue().reversed())
-                .forEach(System.out::println);
+                .sorted(Map.Entry.<Object,Long>comparingByValue().reversed());
 
         int loadperWorkerY = Y.getRowDimension()/MAX_WORKERS;
         int loadWorkerModY = Y.getRowDimension()%MAX_WORKERS;
@@ -288,11 +281,18 @@ public class Masterclass implements Master {
     public void createXY(){
         X = MatrixUtils.createRealMatrix(dataset.getRowDimension(),k);
         Y = MatrixUtils.createRealMatrix(dataset.getColumnDimension(),k);
-        Random random = new Random();
+        JDKRandomGenerator random = new JDKRandomGenerator();
+        random.setSeed(1);
+
+        for(int i=0; i<X.getRowDimension(); i++){
+            for(int j=0; j<X.getColumnDimension(); j++){
+                this.X.setEntry(i,j,random.nextDouble());
+            }
+        }
 
         for(int i=0; i<Y.getRowDimension(); i++){
-            for(int j=0; j<k; j++) {
-                Y.setEntry(i, j, random.nextDouble());
+            for(int j=0; j<Y.getColumnDimension(); j++) {
+                this.Y.setEntry(i, j, random.nextDouble());
             }
         }
     }
@@ -369,7 +369,7 @@ public class Masterclass implements Master {
         double ModelPrediction, RealPrediction, CmatrixPred, MeanSquaredError, Difference, Regularization;
         double Error = 0.0;
         double TotalError;
-        double l = 0.01;
+        double l = 0.1;
         double temp;
         for (int user = 0; user < P.getRowDimension(); user++) {
             for (int item = 0; item < P.getColumnDimension(); item++) {
