@@ -2,15 +2,8 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="3d3578fb-0972-416d-9664-e3014c1a7101" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/compiler.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/Masterclass.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Masterclass.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/Worker.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/Worker.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/WorkerClass.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/WorkerClass.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/DatasetReader.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/DatasetReader.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/Worker.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/Worker.class" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/target/classes/WorkerClass.class" beforeDir="false" afterPath="$PROJECT_DIR$/target/classes/WorkerClass.class" afterDir="false" />
     </list>
     <ignored path="$PROJECT_DIR$/target/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -21,21 +14,28 @@
     <option name="LAST_RESOLUTION" value="IGNORE" />
   </component>
   <component name="FileEditorManager">
-    <leaf SIDE_TABS_SIZE_LIMIT_KEY="450">
-      <file leaf-file-name="AndroidUser.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/AndroidUser.java">
+    <leaf>
+      <file leaf-file-name="Masterclass.java" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/main/java/Masterclass.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="306">
-              <caret line="32" selection-start-line="32" selection-end-line="32" />
+            <state relative-caret-position="458">
+              <caret line="271" column="49" lean-forward="true" selection-start-line="271" selection-start-column="49" selection-end-line="271" selection-end-column="49" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="e#18477#18478#0" expanded="true" />
+                <element signature="e#18511#18512#0" expanded="true" />
+                <element signature="e#18694#18695#0" expanded="true" />
+                <element signature="e#18740#18741#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="ClientHandler.java" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/main/java/ClientHandler.java">
+      <file leaf-file-name="AndroidUser.java" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/main/java/AndroidUser.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="221">
-              <caret line="14" column="62" selection-start-line="14" selection-start-column="62" selection-end-line="14" selection-end-column="70" />
+            <state relative-caret-position="34">
+              <caret line="7" column="13" selection-start-line="7" selection-start-column="13" selection-end-line="7" selection-end-column="13" />
             </state>
           </provider>
         </entry>
@@ -43,20 +43,8 @@
       <file leaf-file-name="WorkerClass.java" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/java/WorkerClass.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="241">
-              <caret line="212" column="19" lean-forward="true" selection-start-line="212" selection-start-column="19" selection-end-line="212" selection-end-column="19" />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="Masterclass.java" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/src/main/java/Masterclass.java">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3740">
-              <caret line="371" column="8" selection-start-line="371" selection-start-column="8" selection-end-line="371" selection-end-column="23" />
-              <folding>
-                <element signature="imports" expanded="true" />
-              </folding>
+            <state relative-caret-position="-3179">
+              <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
             </state>
           </provider>
         </entry>
@@ -169,6 +157,14 @@
       <option name="presentableId" value="Default" />
       <updated>1523695360286</updated>
     </task>
+    <task id="LOCAL-00001" summary="edits">
+      <created>1525870993333</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1525870993333</updated>
+    </task>
+    <option name="localTasksCounter" value="2" />
     <servers />
   </component>
   <component name="ToolWindowManager">
@@ -199,6 +195,10 @@
   </component>
   <component name="VcsContentAnnotationSettings">
     <option name="myLimit" value="2678400000" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="edits" />
+    <option name="LAST_COMMIT_MESSAGE" value="edits" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
@@ -233,6 +233,10 @@
           <caret line="287" column="26" lean-forward="true" selection-start-line="287" selection-start-column="26" selection-end-line="287" selection-end-column="26" />
           <folding>
             <element signature="imports" expanded="true" />
+            <element signature="e#18477#18478#0" expanded="true" />
+            <element signature="e#18511#18512#0" expanded="true" />
+            <element signature="e#18694#18695#0" expanded="true" />
+            <element signature="e#18740#18741#0" expanded="true" />
           </folding>
         </state>
       </provider>
@@ -314,31 +318,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/ClientHandler.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="221">
-          <caret line="14" column="62" selection-start-line="14" selection-start-column="62" selection-end-line="14" selection-end-column="70" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/AndroidUser.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="306">
-          <caret line="32" selection-start-line="32" selection-end-line="32" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/Worker.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="255">
           <caret line="17" column="81" selection-start-line="17" selection-start-column="81" selection-end-line="17" selection-end-column="81" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/src/main/java/WorkerClass.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="241">
-          <caret line="212" column="19" lean-forward="true" selection-start-line="212" selection-start-column="19" selection-end-line="212" selection-end-column="19" />
         </state>
       </provider>
     </entry>
@@ -349,12 +332,37 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/ClientHandler.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="196">
+          <caret line="14" column="62" selection-start-line="14" selection-start-column="62" selection-end-line="14" selection-end-column="70" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/WorkerClass.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3179">
+          <caret line="6" column="13" selection-start-line="6" selection-start-column="13" selection-end-line="6" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/AndroidUser.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="34">
+          <caret line="7" column="13" selection-start-line="7" selection-start-column="13" selection-end-line="7" selection-end-column="13" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/src/main/java/Masterclass.java">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3740">
-          <caret line="371" column="8" selection-start-line="371" selection-start-column="8" selection-end-line="371" selection-end-column="23" />
+        <state relative-caret-position="458">
+          <caret line="271" column="49" lean-forward="true" selection-start-line="271" selection-start-column="49" selection-end-line="271" selection-end-column="49" />
           <folding>
             <element signature="imports" expanded="true" />
+            <element signature="e#18477#18478#0" expanded="true" />
+            <element signature="e#18511#18512#0" expanded="true" />
+            <element signature="e#18694#18695#0" expanded="true" />
+            <element signature="e#18740#18741#0" expanded="true" />
           </folding>
         </state>
       </provider>

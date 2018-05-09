@@ -246,6 +246,7 @@ public class Masterclass implements Master {
     }
 
     public void sendWorkY(){
+        
         //Ranking by memory
         memoryRank.entrySet().stream()
                 .sorted(Map.Entry.<Object,Long>comparingByValue().reversed());
@@ -284,11 +285,11 @@ public class Masterclass implements Master {
         JDKRandomGenerator random = new JDKRandomGenerator();
         random.setSeed(1);
 
-        for(int i=0; i<X.getRowDimension(); i++){
+        /*for(int i=0; i<X.getRowDimension(); i++){
             for(int j=0; j<X.getColumnDimension(); j++){
                 this.X.setEntry(i,j,random.nextDouble());
             }
-        }
+        }*/
 
         for(int i=0; i<Y.getRowDimension(); i++){
             for(int j=0; j<Y.getColumnDimension(); j++) {
