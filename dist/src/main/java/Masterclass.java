@@ -1,10 +1,14 @@
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.random.JDKRandomGenerator;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.simple.parser.ParseException;
 
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.IOException;
+import javax.json.Json;
+import javax.json.JsonObject;
+import javax.json.JsonReader;
+import java.io.*;
 import java.net.*;
 import java.util.*;
 
@@ -24,9 +28,18 @@ public class Masterclass implements Master {
     private HashMap<Object,RealMatrix> resultsY = new HashMap<>();
     private ObjectInputStream in;
     private ObjectOutputStream out;
+    private static JsonObject mainJsonObject;
+    private static JsonReader json;
 
     public void initialize(){
         String fileName = "src/main/java/input_matrix_no_zeros.csv";
+        String jsonPois = "src/main/java/POIs.json";
+        try {
+            JsonPoiParser poisParser = new JsonPoiParser(getJsonObjectFromPath(jsonPois).toString());
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
         DatasetReader reader = new DatasetReader();
         dataset = reader.DatasetReader(fileName);
         C = MatrixUtils.createRealMatrix(dataset.getRowDimension(),dataset.getColumnDimension());
@@ -407,6 +420,20 @@ public class Masterclass implements Master {
         }
         TotalNorm = NormForUser + NormForItem;
         return TotalNorm;
+    }
+
+    public static JsonObject getJsonObjectFromPath(String jsonPath){
+        try {
+            json = Json.createReader(new FileReader(jsonPath));
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+        mainJsonObject = json.readObject();
+        json.close();
+
+
+        return mainJsonObject;
+
     }
 
     ArrayList<WorkerHandler> getConnections(){

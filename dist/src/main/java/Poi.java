@@ -1,16 +1,20 @@
 public class Poi {
+    private String poi;
     private int id;
     private String name;
     private double latitude;
     private double longitude;
     private String category;
+    private String photos;
 
-    Poi(int id,String name,double latitude,double longitude,String category){
-        this.id = id;
+    Poi(int id, String poi,String name,double latitude,double longitude,String category,String photos){
+        this.poi = poi;
         this.name = name;
         this.latitude = latitude;
         this.longitude = longitude;
         this.category = category;
+        this.photos = photos;
+        this.id = id;
     }
 
     public void setId(int id){
