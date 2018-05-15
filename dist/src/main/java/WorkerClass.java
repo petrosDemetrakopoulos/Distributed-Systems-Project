@@ -184,7 +184,7 @@ public class WorkerClass implements Worker{
         RealMatrix addition1 = YtY.add(product1);
         RealMatrix regularization = IdentityMatrix.scalarMultiply(l);
         RealMatrix inverseTerm = addition1.add(regularization);
-        RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
+        RealMatrix Inverse = new LUDecomposition(inverseTerm).getSolver().getInverse();
         RealMatrix multiplication2 = Inverse.multiply(Ytranspose);
         RealMatrix pu = MatrixUtils.createColumnRealMatrix(P.getRow(user));//ftiaxnei to p(u)
         RealMatrix multiplication3 = multiplication2.multiply(realMatrixCu);
@@ -205,7 +205,7 @@ public class WorkerClass implements Worker{
         RealMatrix addition1 = XtX.add(product1);
         RealMatrix regularization = IdentityMatrix.scalarMultiply(l);
         RealMatrix inverseTerm = addition1.add(regularization);
-        RealMatrix Inverse = new QRDecomposition(inverseTerm).getSolver().getInverse();
+        RealMatrix Inverse = new LUDecomposition(inverseTerm).getSolver().getInverse();
         RealMatrix multiplication2 = Inverse.multiply(Xtranspose);
         RealMatrix pi = MatrixUtils.createColumnRealMatrix(P.getColumn(item));//ftiaxnei to p(u)
         RealMatrix multiplication3 = multiplication2.multiply(realMatrixCi);

@@ -1,13 +1,13 @@
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.random.JDKRandomGenerator;
-import org.json.JSONException;
+/*import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
 
 import javax.json.Json;
 import javax.json.JsonObject;
-import javax.json.JsonReader;
+import javax.json.JsonReader;*/
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -28,17 +28,17 @@ public class Masterclass implements Master {
     private HashMap<Object,RealMatrix> resultsY = new HashMap<>();
     private ObjectInputStream in;
     private ObjectOutputStream out;
-    private static JsonObject mainJsonObject;
-    private static JsonReader json;
+    //private static JsonObject mainJsonObject;
+    //private static JsonReader json;
 
     public void initialize(){
         String fileName = "src/main/java/input_matrix_no_zeros.csv";
         String jsonPois = "src/main/java/POIs.json";
-        try {
+        /*try {
             JsonPoiParser poisParser = new JsonPoiParser(getJsonObjectFromPath(jsonPois).toString());
         } catch (JSONException e) {
             e.printStackTrace();
-        }
+        }*/
 
         DatasetReader reader = new DatasetReader();
         dataset = reader.DatasetReader(fileName);
@@ -298,11 +298,11 @@ public class Masterclass implements Master {
         JDKRandomGenerator random = new JDKRandomGenerator();
         random.setSeed(1);
 
-        /*for(int i=0; i<X.getRowDimension(); i++){
+        for(int i=0; i<X.getRowDimension(); i++){
             for(int j=0; j<X.getColumnDimension(); j++){
                 this.X.setEntry(i,j,random.nextDouble());
             }
-        }*/
+        }
 
         for(int i=0; i<Y.getRowDimension(); i++){
             for(int j=0; j<Y.getColumnDimension(); j++) {
@@ -413,17 +413,17 @@ public class Masterclass implements Master {
         double NormForUser = 0;
         double NormForItem = 0;
         for (int user = 0; user < P.getRowDimension(); user++) {
-            NormForUser = NormForUser + Math.pow(X.getRowMatrix(user).getNorm(), 2);
+            NormForUser = NormForUser + Math.pow(X.getRowMatrix(user).getFrobeniusNorm(), 2);
 
         }
         for (int item = 0; item < P.getColumnDimension(); item++) {
-            NormForItem = NormForItem + Math.pow(Y.getRowMatrix(item).getNorm(), 2);
+            NormForItem = NormForItem + Math.pow(Y.getRowMatrix(item).getFrobeniusNorm(), 2);
         }
         TotalNorm = NormForUser + NormForItem;
         return TotalNorm;
     }
 
-    public static JsonObject getJsonObjectFromPath(String jsonPath){
+   /* public static JsonObject getJsonObjectFromPath(String jsonPath){
         try {
             json = Json.createReader(new FileReader(jsonPath));
         } catch (FileNotFoundException e) {
@@ -435,7 +435,7 @@ public class Masterclass implements Master {
 
         return mainJsonObject;
 
-    }
+    }*/
 
     ArrayList<WorkerHandler> getConnections(){
         return connections;
