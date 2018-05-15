@@ -1,4 +1,4 @@
-/*import org.json.JSONException;
+import org.json.JSONException;
 import org.json.JSONObject;
 import java.util.*;
 
@@ -29,4 +29,4 @@ public class JsonPoiParser {
     }
 
 
-}*/
+}

@@ -1,13 +1,13 @@
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.random.JDKRandomGenerator;
-/*import org.json.JSONException;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
 
 import javax.json.Json;
 import javax.json.JsonObject;
-import javax.json.JsonReader;*/
+import javax.json.JsonReader;
 import java.io.*;
 import java.net.*;
 import java.util.*;
@@ -22,23 +22,23 @@ public class Masterclass implements Master {
     private ArrayList<ClientHandler> clientConnections = new ArrayList<ClientHandler>();
     private ArrayList<String> Clients = new ArrayList<String>();
     private HashMap<Object,Long> memoryRank = new HashMap<Object, Long>();
-    private int MAX_WORKERS = 3;
+    private int MAX_WORKERS = 6;
     private int k = 20;
     private HashMap<Object,RealMatrix> resultsX = new HashMap<>();
     private HashMap<Object,RealMatrix> resultsY = new HashMap<>();
     private ObjectInputStream in;
     private ObjectOutputStream out;
-    //private static JsonObject mainJsonObject;
-    //private static JsonReader json;
+    private static JsonObject mainJsonObject;
+    private static JsonReader json;
 
     public void initialize(){
         String fileName = "src/main/java/input_matrix_no_zeros.csv";
         String jsonPois = "src/main/java/POIs.json";
-        /*try {
+        try {
             JsonPoiParser poisParser = new JsonPoiParser(getJsonObjectFromPath(jsonPois).toString());
         } catch (JSONException e) {
             e.printStackTrace();
-        }*/
+        }
 
         DatasetReader reader = new DatasetReader();
         dataset = reader.DatasetReader(fileName);
@@ -79,7 +79,7 @@ public class Masterclass implements Master {
                         double NewError,TotalError;
                         int haveWork;
                         boolean threshold = false;
-                        for(int epoch=0; epoch<5; epoch++) {
+                        for(int epoch=0; epoch<1; epoch++) {
 
                             //FOR MATRIX X
                             sendWorkX();
@@ -179,17 +179,20 @@ public class Masterclass implements Master {
                 }else if(type.equals("user")){
                     System.out.println("We have a new client connection...");
                     ClientHandler sc = new ClientHandler(s,this,764, in, out);
-                    int crnUserID = 764;
-                    System.out.println(crnUserID);
+             //       int crnUserID = 764;
+                 //   System.out.println(crnUserID);
                     clientConnections.add(sc);
                     Object name = sc.getData();
+                    String temp = (String) name;
+                    int userNumber = Integer.parseInt(temp);
+                   // int us = Integer.parseInt(((int)name));
                     sc.sendData("Welcome! " + (String)name);
                     Clients.add((String)name);
                     Object numOfPois = sc.getData();
                     String stringifiedNumOfPois = (String)numOfPois;
                     HashMap<Integer, Double> hmap = new HashMap<>();
                     for(int i=0; i<Y.getRowDimension(); i++){ //for each poi
-                        double crnRes = calculateScore(crnUserID, i);
+                        double crnRes = calculateScore(userNumber, i);
                         hmap.put(i,crnRes);
                     }
                     HashMap map = sortByValues(hmap);
@@ -215,6 +218,8 @@ public class Masterclass implements Master {
                             break;
                         }
                     }
+
+                    HashMap<Integer,Poi> finalPois = matchingPois(results);
                     sc.sendData(results);
                 }
             } catch (IOException | InterruptedException | ClassNotFoundException e){
@@ -222,6 +227,18 @@ public class Masterclass implements Master {
             }
         }
     }
+
+        private static HashMap<Integer,Poi> matchingPois(HashMap<Integer,Double> oldMap){
+            HashMap<Integer,Poi> newPois = new HashMap<>();
+            Iterator iterator = oldMap.entrySet().iterator();
+            while (iterator.hasNext()){
+
+            }
+
+            return  newPois;
+        }
+
+
     private static HashMap sortByValues(HashMap map) {
         List list = new LinkedList(map.entrySet());
         // Defined Custom Comparator here
@@ -423,7 +440,7 @@ public class Masterclass implements Master {
         return TotalNorm;
     }
 
-   /* public static JsonObject getJsonObjectFromPath(String jsonPath){
+    public static JsonObject getJsonObjectFromPath(String jsonPath){
         try {
             json = Json.createReader(new FileReader(jsonPath));
         } catch (FileNotFoundException e) {
@@ -435,7 +452,7 @@ public class Masterclass implements Master {
 
         return mainJsonObject;
 
-    }*/
+    }
 
     ArrayList<WorkerHandler> getConnections(){
         return connections;

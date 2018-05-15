@@ -1,4 +1,6 @@
-public class Poi {
+import java.io.Serializable;
+
+public class Poi implements Serializable {
     private String poi;
     private int id;
     private String name;
