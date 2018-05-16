@@ -34,8 +34,9 @@ public class Masterclass implements Master {
     public void initialize(){
         String fileName = "src/main/java/input_matrix_no_zeros.csv";
         String jsonPois = "src/main/java/POIs.json";
+        JsonPoiParser poisParser = null;
         try {
-            JsonPoiParser poisParser = new JsonPoiParser(getJsonObjectFromPath(jsonPois).toString());
+            poisParser = new JsonPoiParser(getJsonObjectFromPath(jsonPois).toString());
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -219,8 +220,9 @@ public class Masterclass implements Master {
                         }
                     }
 
-                    HashMap<Integer,Poi> finalPois = matchingPois(results);
-                    sc.sendData(results);
+                    HashMap<Integer,Poi> finalPois = matchingPois(results,poisParser);
+             //       sc.sendData(results);
+                    sc.sendData(finalPois);
                 }
             } catch (IOException | InterruptedException | ClassNotFoundException e){
                 e.printStackTrace();
@@ -228,14 +230,22 @@ public class Masterclass implements Master {
         }
     }
 
-        private static HashMap<Integer,Poi> matchingPois(HashMap<Integer,Double> oldMap){
-            HashMap<Integer,Poi> newPois = new HashMap<>();
-            Iterator iterator = oldMap.entrySet().iterator();
-            while (iterator.hasNext()){
-
+        private static HashMap<Integer,Poi> matchingPois(HashMap<Integer,Double> resultsMap,JsonPoiParser poisParser){
+            HashMap<Integer,Poi> finalPois = new HashMap<>();
+            for(int keyVaule : resultsMap.keySet())
+            {
+         //       System.out.println(keyVaule);
+                for(int tempKey : poisParser.getPoisMap().keySet()){
+                    if(keyVaule == tempKey){
+                        finalPois.put(keyVaule,poisParser.getSpecificPoi(keyVaule));
+                    }
+                }
             }
 
-            return  newPois;
+  /*          for(int tt : finalPois.keySet())
+                System.out.println("\n  new " + tt );*/
+
+            return  finalPois;
         }
 
 
