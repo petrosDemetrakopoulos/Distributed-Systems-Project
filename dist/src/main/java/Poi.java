@@ -1,4 +1,5 @@
 import java.io.Serializable;
+import java.util.Objects;
 
 public class Poi implements Serializable {
     private String poi;
@@ -60,8 +61,17 @@ public class Poi implements Serializable {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        return super.equals(obj);
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Poi poi1 = (Poi) o;
+        return id == poi1.id &&
+                Double.compare(poi1.latitude, latitude) == 0 &&
+                Double.compare(poi1.longitude, longitude) == 0 &&
+                Objects.equals(poi, poi1.poi) &&
+                Objects.equals(name, poi1.name) &&
+                Objects.equals(category, poi1.category) &&
+                Objects.equals(photos, poi1.photos);
     }
 
     @Override
