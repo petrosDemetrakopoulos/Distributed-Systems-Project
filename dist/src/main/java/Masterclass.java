@@ -197,7 +197,7 @@ public class Masterclass implements Master {
                         hmap.put(i,crnRes);
                     }
                     HashMap map = sortByValues(hmap);
-                    System.out.println("After Sorting:");
+                    //System.out.println("After Sorting:");
                     Set set2 = map.entrySet();
                     Iterator iterator2 = set2.iterator();
                     while(iterator2.hasNext()) {

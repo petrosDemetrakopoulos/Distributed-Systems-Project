@@ -60,6 +60,10 @@ public class Poi implements Serializable {
         return category;
     }
 
+    public String getPhotos() {
+        return photos;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
