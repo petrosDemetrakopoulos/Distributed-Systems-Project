@@ -4,6 +4,7 @@ import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.json.JSONException;
 import org.json.JSONObject;
 import org.json.simple.parser.ParseException;
+import shared.Poi;
 
 import javax.json.Json;
 import javax.json.JsonObject;
@@ -22,7 +23,7 @@ public class Masterclass implements Master {
     private ArrayList<ClientHandler> clientConnections = new ArrayList<ClientHandler>();
     private ArrayList<String> Clients = new ArrayList<String>();
     private HashMap<Object,Long> memoryRank = new HashMap<Object, Long>();
-    private int MAX_WORKERS = 6;
+    private int MAX_WORKERS = 3;
     private int k = 20;
     private HashMap<Object,RealMatrix> resultsX = new HashMap<>();
     private HashMap<Object,RealMatrix> resultsY = new HashMap<>();
@@ -179,9 +180,7 @@ public class Masterclass implements Master {
                     }
                 }else if(type.equals("user")){
                     System.out.println("We have a new client connection...");
-                    ClientHandler sc = new ClientHandler(s,this,764, in, out);
-             //       int crnUserID = 764;
-                 //   System.out.println(crnUserID);
+                    ClientHandler sc = new ClientHandler(s,this, in, out);
                     clientConnections.add(sc);
                     Object name = sc.getData();
                     String temp = (String) name;
@@ -191,6 +190,7 @@ public class Masterclass implements Master {
                     Clients.add((String)name);
                     Object numOfPois = sc.getData();
                     String stringifiedNumOfPois = (String)numOfPois;
+                    System.out.println(stringifiedNumOfPois);
                     HashMap<Integer, Double> hmap = new HashMap<>();
                     for(int i=0; i<Y.getRowDimension(); i++){ //for each poi
                         double crnRes = calculateScore(userNumber, i);
@@ -202,8 +202,8 @@ public class Masterclass implements Master {
                     Iterator iterator2 = set2.iterator();
                     while(iterator2.hasNext()) {
                         Map.Entry me2 = (Map.Entry)iterator2.next();
-                        System.out.print(me2.getKey() + ": ");
-                        System.out.println(me2.getValue());
+                        //System.out.print(me2.getKey() + ": ");
+                        //System.out.println(me2.getValue());
                     }
                     iterator2 = set2.iterator();
                     HashMap<Integer, Double> results = new HashMap<Integer, Double>();
@@ -212,16 +212,15 @@ public class Masterclass implements Master {
                         if(count < Integer.parseInt(stringifiedNumOfPois)){
                             Map.Entry me2 = (Map.Entry)iterator2.next();
                             results.put((Integer)me2.getKey(),(Double)me2.getValue());
-                            System.out.print(me2.getKey() + ": ");
-                            System.out.println(me2.getValue());
+                            //System.out.print(me2.getKey() + ": ");
+                            //System.out.println(me2.getValue());
                             count++;
                         } else {
                             break;
                         }
                     }
 
-                    HashMap<Integer,Poi> finalPois = matchingPois(results,poisParser);
-             //       sc.sendData(results);
+                    Object finalPois = matchingPois(results,poisParser);
                     sc.sendData(finalPois);
                 }
             } catch (IOException | InterruptedException | ClassNotFoundException e){
@@ -230,21 +229,16 @@ public class Masterclass implements Master {
         }
     }
 
-        private static HashMap<Integer,Poi> matchingPois(HashMap<Integer,Double> resultsMap,JsonPoiParser poisParser){
+        private static HashMap<Integer, Poi> matchingPois(HashMap<Integer,Double> resultsMap, JsonPoiParser poisParser){
             HashMap<Integer,Poi> finalPois = new HashMap<>();
             for(int keyVaule : resultsMap.keySet())
             {
-         //       System.out.println(keyVaule);
                 for(int tempKey : poisParser.getPoisMap().keySet()){
                     if(keyVaule == tempKey){
                         finalPois.put(keyVaule,poisParser.getSpecificPoi(keyVaule));
                     }
                 }
             }
-
-  /*          for(int tt : finalPois.keySet())
-                System.out.println("\n  new " + tt );*/
-
             return  finalPois;
         }
 
@@ -441,7 +435,6 @@ public class Masterclass implements Master {
         double NormForItem = 0;
         for (int user = 0; user < P.getRowDimension(); user++) {
             NormForUser = NormForUser + Math.pow(X.getRowMatrix(user).getFrobeniusNorm(), 2);
-
         }
         for (int item = 0; item < P.getColumnDimension(); item++) {
             NormForItem = NormForItem + Math.pow(Y.getRowMatrix(item).getFrobeniusNorm(), 2);

@@ -1,5 +1,5 @@
+package shared;
 import java.io.Serializable;
-import java.util.Objects;
 
 public class Poi implements Serializable {
     private String poi;
@@ -10,7 +10,7 @@ public class Poi implements Serializable {
     private String category;
     private String photos;
 
-    Poi(int id, String poi,String name,double latitude,double longitude,String category,String photos){
+    public Poi(int id, String poi,String name,double latitude,double longitude,String category,String photos){
         this.poi = poi;
         this.name = name;
         this.latitude = latitude;
@@ -68,10 +68,10 @@ public class Poi implements Serializable {
         return id == poi1.id &&
                 Double.compare(poi1.latitude, latitude) == 0 &&
                 Double.compare(poi1.longitude, longitude) == 0 &&
-                Objects.equals(poi, poi1.poi) &&
-                Objects.equals(name, poi1.name) &&
-                Objects.equals(category, poi1.category) &&
-                Objects.equals(photos, poi1.photos);
+                poi.equals(poi1.poi) &&
+                name.equals(poi1.name) &&
+                category.equals(poi1.category) &&
+                photos.equals(poi1.photos);
     }
 
     @Override
