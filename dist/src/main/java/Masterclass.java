@@ -2,10 +2,7 @@ import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.random.JDKRandomGenerator;
 import org.json.JSONException;
-import org.json.JSONObject;
-import org.json.simple.parser.ParseException;
 import shared.Poi;
-
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonReader;
@@ -18,7 +15,6 @@ public class Masterclass implements Master {
     private RealMatrix dataset,P,C,X,Y;
     private ServerSocket socketprovider;
     private int connectionID = 0;
-    private int clientConnectionID = 0;
     private ArrayList<WorkerHandler> connections = new ArrayList<WorkerHandler>();
     private ArrayList<ClientHandler> clientConnections = new ArrayList<ClientHandler>();
     private ArrayList<String> Clients = new ArrayList<String>();
@@ -33,7 +29,7 @@ public class Masterclass implements Master {
     private static JsonReader json;
 
     public void initialize(){
-        String fileName = "src/main/java/input_matrix_no_zeros.csv";
+        String fileName = "src/main/java/input_matrix_non_zeros.csv";
         String jsonPois = "src/main/java/POIs.json";
         JsonPoiParser poisParser = null;
         try {
@@ -185,8 +181,7 @@ public class Masterclass implements Master {
                     Object name = sc.getData();
                     String temp = (String) name;
                     int userNumber = Integer.parseInt(temp);
-                   // int us = Integer.parseInt(((int)name));
-                    sc.sendData("Welcome! " + (String)name);
+                    sc.sendData("Welcome! " + name);
                     Clients.add((String)name);
                     Object numOfPois = sc.getData();
                     String stringifiedNumOfPois = (String)numOfPois;
@@ -199,12 +194,7 @@ public class Masterclass implements Master {
                     HashMap map = sortByValues(hmap);
                     //System.out.println("After Sorting:");
                     Set set2 = map.entrySet();
-                    Iterator iterator2 = set2.iterator();
-                    while(iterator2.hasNext()) {
-                        Map.Entry me2 = (Map.Entry)iterator2.next();
-                        //System.out.print(me2.getKey() + ": ");
-                        //System.out.println(me2.getValue());
-                    }
+                    Iterator iterator2;
                     iterator2 = set2.iterator();
                     HashMap<Integer, Double> results = new HashMap<Integer, Double>();
                     Integer count = 0;
@@ -212,15 +202,15 @@ public class Masterclass implements Master {
                         if(count < Integer.parseInt(stringifiedNumOfPois)){
                             Map.Entry me2 = (Map.Entry)iterator2.next();
                             results.put((Integer)me2.getKey(),(Double)me2.getValue());
-                            //System.out.print(me2.getKey() + ": ");
-                            //System.out.println(me2.getValue());
+                            System.out.print(me2.getKey() + ": ");
+                            System.out.println(me2.getValue());
                             count++;
                         } else {
                             break;
                         }
                     }
 
-                    Object finalPois = matchingPois(results,poisParser);
+                    HashMap<Integer, Poi> finalPois = matchingPois(results,poisParser);
                     sc.sendData(finalPois);
                 }
             } catch (IOException | InterruptedException | ClassNotFoundException e){
@@ -231,10 +221,13 @@ public class Masterclass implements Master {
 
         private static HashMap<Integer, Poi> matchingPois(HashMap<Integer,Double> resultsMap, JsonPoiParser poisParser){
             HashMap<Integer,Poi> finalPois = new HashMap<>();
+            int i = 0;
             for(int keyVaule : resultsMap.keySet())
             {
                 for(int tempKey : poisParser.getPoisMap().keySet()){
                     if(keyVaule == tempKey){
+                        System.out.println(i);
+                        i++;
                         finalPois.put(keyVaule,poisParser.getSpecificPoi(keyVaule));
                     }
                 }
@@ -267,7 +260,7 @@ public class Masterclass implements Master {
         resultsY.put(name,temp);
     }
 
-    public void sendWorkX(){
+    private void sendWorkX(){
         //Ranking by memory
         memoryRank.entrySet().stream()
                 .sorted(Map.Entry.<Object,Long>comparingByValue().reversed());
@@ -279,7 +272,7 @@ public class Masterclass implements Master {
         distributeXMatrixToWorkers(startX,endX,loadperWorkerX,loadWorkerModX);
     }
 
-    public void sendWorkY(){
+    private void sendWorkY(){
 
         //Ranking by memory
         memoryRank.entrySet().stream()
@@ -313,7 +306,7 @@ public class Masterclass implements Master {
         }
     }
 
-    public void createXY(){
+    private void createXY(){
         X = MatrixUtils.createRealMatrix(dataset.getRowDimension(),k);
         Y = MatrixUtils.createRealMatrix(dataset.getColumnDimension(),k);
         JDKRandomGenerator random = new JDKRandomGenerator();
@@ -429,7 +422,7 @@ public class Masterclass implements Master {
         return p_u_i;
     }
 
-    public double calculateRegularization() {
+    private double calculateRegularization() {
         double TotalNorm;
         double NormForUser = 0;
         double NormForItem = 0;
@@ -443,7 +436,7 @@ public class Masterclass implements Master {
         return TotalNorm;
     }
 
-    public static JsonObject getJsonObjectFromPath(String jsonPath){
+    private static JsonObject getJsonObjectFromPath(String jsonPath){
         try {
             json = Json.createReader(new FileReader(jsonPath));
         } catch (FileNotFoundException e) {
@@ -455,14 +448,6 @@ public class Masterclass implements Master {
 
         return mainJsonObject;
 
-    }
-
-    ArrayList<WorkerHandler> getConnections(){
-        return connections;
-    }
-
-    ArrayList<WorkerHandler> setConnections( ArrayList<WorkerHandler> connections){
-        return this.connections = connections;
     }
 
     public static void main(String args[]){

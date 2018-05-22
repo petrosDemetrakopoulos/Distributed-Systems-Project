@@ -8,7 +8,7 @@ public class DatasetReader {
 
     public static RealMatrix DatasetReader(String excelFileName){
 
-        RealMatrix data = MatrixUtils.createRealMatrix(765,1964); // creating our realmatrix array that has the users rating for any poi
+        RealMatrix data = MatrixUtils.createRealMatrix(835,1692); // creating our realmatrix array that has the users rating for any poi
 
         BufferedReader bufferedReader = null;
 
