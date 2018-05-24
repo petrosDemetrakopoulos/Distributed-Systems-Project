@@ -1,3 +1,4 @@
+import org.apache.commons.math3.geometry.partitioning.Region;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.random.JDKRandomGenerator;
@@ -77,7 +78,7 @@ public class Masterclass implements Master {
                         double NewError,TotalError;
                         int haveWork;
                         boolean threshold = false;
-                        for(int epoch=0; epoch<1; epoch++) {
+                        for(int epoch=0; epoch<3; epoch++) {
 
                             //FOR MATRIX X
                             sendWorkX();
@@ -147,7 +148,7 @@ public class Masterclass implements Master {
                             System.out.println("Epoch is: " + epoch);
                         }
                         if(threshold){
-                            System.out.println("We reached the threshhold...training will stop...");
+                            System.out.println("We reached the threshold..training will stop...");
                             haveWork = 0;
                             for (int i = 0; i < MAX_WORKERS; i++) {
                                 connections.get(i).sendData(haveWork);
@@ -183,34 +184,64 @@ public class Masterclass implements Master {
                     int userNumber = Integer.parseInt(temp);
                     sc.sendData("Welcome! " + name);
                     Clients.add((String)name);
+                    Object Objcategory = sc.getData();
+                    String category = (String) Objcategory;
+                    Object Objradius = sc.getData();
+                    double radius = Double.parseDouble((String)Objradius);
+                    Object Objlatitude = sc.getData();
+                    double latU = Double.parseDouble((String)Objlatitude);
+                    Object Objlongitude = sc.getData();
+                    double longiU = Double.parseDouble((String)Objlongitude);
                     Object numOfPois = sc.getData();
                     String stringifiedNumOfPois = (String)numOfPois;
-                    System.out.println(stringifiedNumOfPois);
+                    System.out.println("User_id: " + userNumber);
                     HashMap<Integer, Double> hmap = new HashMap<>();
                     for(int i=0; i<Y.getRowDimension(); i++){ //for each poi
                         double crnRes = calculateScore(userNumber, i);
                         hmap.put(i,crnRes);
                     }
                     HashMap map = sortByValues(hmap);
-                    //System.out.println("After Sorting:");
+                    System.out.println("After Sorting:");
+                    Set set3 = map.entrySet();
+                    Iterator iterator3;
+                    iterator3 = set3.iterator();
+                    while(iterator3.hasNext()){
+                        Map.Entry me2 = (Map.Entry)iterator3.next();
+                        System.out.print(me2.getKey() + ": ");
+                        System.out.println(me2.getValue());
+                    }
                     Set set2 = map.entrySet();
                     Iterator iterator2;
                     iterator2 = set2.iterator();
-                    HashMap<Integer, Double> results = new HashMap<Integer, Double>();
                     Integer count = 0;
+                    Poi specificPoi;
+                    double distance;
+                    HashMap<Integer, Poi> finalPois = new HashMap<>();
                     while(iterator2.hasNext()) {
                         if(count < Integer.parseInt(stringifiedNumOfPois)){
                             Map.Entry me2 = (Map.Entry)iterator2.next();
-                            results.put((Integer)me2.getKey(),(Double)me2.getValue());
-                            System.out.print(me2.getKey() + ": ");
-                            System.out.println(me2.getValue());
-                            count++;
-                        } else {
+                            //if(P.getEntry(userNumber,(Integer)me2.getKey()) == 0){
+                                for(int tempKey : poisParser.getPoisMap().keySet()){
+                                    if((Integer)me2.getKey() == tempKey){
+                                        specificPoi = poisParser.getSpecificPoi(tempKey);
+                                        distance = distance(latU,specificPoi.getLatitude(),longiU,specificPoi.getLongitude());
+                                        if(category.equals("--Any Category--") && distance <= radius){
+                                            finalPois.put((Integer)me2.getKey(),specificPoi);
+                                            System.out.println((Integer)me2.getKey());
+                                            count++;
+                                        }else if(category.equals(specificPoi.getCategory()) && distance <= radius){
+                                            finalPois.put((Integer)me2.getKey(),specificPoi);
+                                            System.out.println((Integer)me2.getKey());
+                                            count++;
+                                        }
+                                        break;
+                                    }
+                                }
+                           // }
+                        }else{
                             break;
                         }
                     }
-
-                    HashMap<Integer, Poi> finalPois = matchingPois(results,poisParser);
                     sc.sendData(finalPois);
                 }
             } catch (IOException | InterruptedException | ClassNotFoundException e){
@@ -219,21 +250,21 @@ public class Masterclass implements Master {
         }
     }
 
-        private static HashMap<Integer, Poi> matchingPois(HashMap<Integer,Double> resultsMap, JsonPoiParser poisParser){
-            HashMap<Integer,Poi> finalPois = new HashMap<>();
-            int i = 0;
-            for(int keyVaule : resultsMap.keySet())
-            {
-                for(int tempKey : poisParser.getPoisMap().keySet()){
-                    if(keyVaule == tempKey){
-                        System.out.println(i);
-                        i++;
-                        finalPois.put(keyVaule,poisParser.getSpecificPoi(keyVaule));
-                    }
+    private static HashMap<Integer, Poi> matchingPois(HashMap<Integer,Double> resultsMap, JsonPoiParser poisParser){
+        HashMap<Integer,Poi> finalPois = new HashMap<>();
+        int i = 0;
+        for(int keyVaule : resultsMap.keySet())
+        {
+            for(int tempKey : poisParser.getPoisMap().keySet()){
+                if(keyVaule == tempKey){
+                    System.out.println(i);
+                    i++;
+                    finalPois.put(keyVaule,poisParser.getSpecificPoi(keyVaule));
                 }
             }
-            return  finalPois;
         }
+        return  finalPois;
+    }
 
 
     private static HashMap sortByValues(HashMap map) {
@@ -448,6 +479,25 @@ public class Masterclass implements Master {
 
         return mainJsonObject;
 
+    }
+
+    //finds distance in meters between coordinates
+    private static double distance(double lat1, double lat2, double lon1,
+                                  double lon2) {
+
+        final int R = 6371; // Radius of the earth
+
+        double latDistance = Math.toRadians(lat2 - lat1);
+        double lonDistance = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(lonDistance / 2) * Math.sin(lonDistance / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        double distance = R * c * 1000; // convert to meters
+
+        distance = Math.pow(distance, 2);
+
+        return Math.sqrt(distance);
     }
 
     public static void main(String args[]){
