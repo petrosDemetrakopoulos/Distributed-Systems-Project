@@ -201,15 +201,6 @@ public class Masterclass implements Master {
                         hmap.put(i,crnRes);
                     }
                     HashMap map = sortByValues(hmap);
-                    System.out.println("After Sorting:");
-                    Set set3 = map.entrySet();
-                    Iterator iterator3;
-                    iterator3 = set3.iterator();
-                    while(iterator3.hasNext()){
-                        Map.Entry me2 = (Map.Entry)iterator3.next();
-                        System.out.print(me2.getKey() + ": ");
-                        System.out.println(me2.getValue());
-                    }
                     Set set2 = map.entrySet();
                     Iterator iterator2;
                     iterator2 = set2.iterator();
@@ -220,24 +211,22 @@ public class Masterclass implements Master {
                     while(iterator2.hasNext()) {
                         if(count < Integer.parseInt(stringifiedNumOfPois)){
                             Map.Entry me2 = (Map.Entry)iterator2.next();
-                            //if(P.getEntry(userNumber,(Integer)me2.getKey()) == 0){
+                            if(P.getEntry(userNumber,(Integer)me2.getKey()) == 0){
                                 for(int tempKey : poisParser.getPoisMap().keySet()){
                                     if((Integer)me2.getKey() == tempKey){
                                         specificPoi = poisParser.getSpecificPoi(tempKey);
                                         distance = distance(latU,specificPoi.getLatitude(),longiU,specificPoi.getLongitude());
                                         if(category.equals("--Any Category--") && distance <= radius){
                                             finalPois.put((Integer)me2.getKey(),specificPoi);
-                                            System.out.println((Integer)me2.getKey());
                                             count++;
                                         }else if(category.equals(specificPoi.getCategory()) && distance <= radius){
                                             finalPois.put((Integer)me2.getKey(),specificPoi);
-                                            System.out.println((Integer)me2.getKey());
                                             count++;
                                         }
                                         break;
                                     }
                                 }
-                           // }
+                            }
                         }else{
                             break;
                         }
@@ -249,24 +238,7 @@ public class Masterclass implements Master {
             }
         }
     }
-
-    private static HashMap<Integer, Poi> matchingPois(HashMap<Integer,Double> resultsMap, JsonPoiParser poisParser){
-        HashMap<Integer,Poi> finalPois = new HashMap<>();
-        int i = 0;
-        for(int keyVaule : resultsMap.keySet())
-        {
-            for(int tempKey : poisParser.getPoisMap().keySet()){
-                if(keyVaule == tempKey){
-                    System.out.println(i);
-                    i++;
-                    finalPois.put(keyVaule,poisParser.getSpecificPoi(keyVaule));
-                }
-            }
-        }
-        return  finalPois;
-    }
-
-
+    
     private static HashMap sortByValues(HashMap map) {
         List list = new LinkedList(map.entrySet());
         // Defined Custom Comparator here
