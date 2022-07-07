@@ -6,7 +6,7 @@ based on user’s history. in order to achieve the goal of the project, we by im
 
 The project was implemented in Java.
 
-## Team Memebers
+## Team Members
  - Sotiris Kotitsas
  - George Chatzopoulos
  - Anastasios Lepipas
